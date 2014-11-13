@@ -2,6 +2,24 @@
 pub mod statements;
 pub mod preprocessor;
 
+/// Checks whether a character is a valid first character for an identifier.
+pub fn is_valid_first_identifier_char(c: char) -> bool
+{
+    match c {
+        '_' => true,
+        _ => return c.is_alphabetic(),
+    }
+}
+
+/// Checks whether a character is allowed to exist inside an identifier (not including first character).
+pub fn is_valid_identifier_char(c: char) -> bool
+{
+    match c {
+        '_' => true,
+        _ => return c.is_alphanumeric(),
+    }
+}
+
 /// An identifier.
 pub struct Identifier
 {
