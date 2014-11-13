@@ -7,10 +7,9 @@ pub mod tokenizer;
 fn main()
 {
     let text = "#define hello #define asdf";
-    let mut tk = tokenizer::Tokenizer::new(text.chars());
+    let tk = tokenizer::Tokenizer::new(text.chars());
+    let mut parser = parser::Parser::new();
     
-    for token in tk {
-        println!("{}", token);
-    }
+    parser.parse(tk)
     
 }

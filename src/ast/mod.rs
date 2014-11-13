@@ -59,3 +59,13 @@ pub struct Ast
 {
     pub nodes: Vec<Stmt>,
 }
+
+impl Ast
+{
+    pub fn new() -> Ast
+    {
+        Ast {
+            nodes: Vec::new(),
+        }
+    }
+}
