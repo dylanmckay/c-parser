@@ -82,12 +82,22 @@ impl Parser
     
     fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
     {
-        //let expression = self.parse_expression(it);
+        let expression = try!(self.parse_expression(it));
+        
+        self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineConstant(ast::preprocessor::Constant {
+            name: match ast::Identifier::from_name(name) {
+                Some(ident) => ident,
+                None => { return Err("invalid identifier".to_string()); }
+            },
+            expr: Some(expression),
+        })));
+        
+        Ok(())
     }
     
-    fn parse_expression<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), ast::Expr>
+    fn parse_expression<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<ast::Expr, String>
     {
-        Ok(())
+        unimplemented!();
     }
     
 }

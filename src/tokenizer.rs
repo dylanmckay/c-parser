@@ -10,6 +10,7 @@ pub enum Token
     TokenWord(String),
     TokenIntegerLiteral(String),
     TokenStringLiteral(String),
+    TokenNewLine,
 }
 
 /// A tokenizer.
@@ -127,12 +128,27 @@ impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
             None => (),
         };
         
-        self.it.eat_whitespace();
+        self.it.eat_whitespace_but_line();
         
         let first_char = match self.it.peek() {
             Some(first_char) => first_char,
             None => panic!("unexpected end of file"),
         };
+        
+        if first_char == '\n' {
+            self.it.next();
+            return Some(TokenNewLine);
+        } else if first_char == '\r' {
+            match self.it.peek_peek() {
+                Some('\n') => {
+                    self.it.next(); // skip '\r'.
+                    self.it.next(); // skip '\n'.
+                    
+                    return Some(TokenNewLine);
+                },
+                Some(..) | None => ()
+            }
+        }
         
         if ast::is_valid_first_identifier_char(first_char) {
             self.read_identifier()
@@ -176,6 +192,20 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
         self.stack.push(val.clone());
         Some(val)
     }
+    
+    pub fn peek_peek(&mut self) -> Option<T>
+    {
+        let first = match self.next() {
+            Some(first) => first,
+            None => { return None; },
+        };
+        
+        let second = self.peek();
+        
+        self.stack.push(first);
+        
+        return second;
+    }
 }
 
 impl<T, U: Iterator<T>> Iterator<T> for IteratorPeeker<T, U>
@@ -191,12 +221,26 @@ impl<T, U: Iterator<T>> Iterator<T> for IteratorPeeker<T, U>
 
 impl<U: Iterator<char>> IteratorPeeker<char, U>
 {
-    pub fn eat_whitespace(&mut self)
+    pub fn eat_whitespace_but_line(&mut self)
     {
         loop {
             match self.next() {
                 Some(val) => {
                     if val.is_whitespace() {
+                    
+                        if val == '\r' {
+                            match self.peek() {
+                                Some('\n') => {
+                                    self.stack.push(val);
+                                    break;
+                                },
+                                _ => (),
+                            }
+                        } else if val == '\n' {
+                            self.stack.push(val);
+                            break;
+                        }
+                    
                         continue;
                     } else {
                         self.stack.push(val);
