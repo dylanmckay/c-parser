@@ -49,9 +49,10 @@ pub enum Stmt
 
 pub trait Expression { }
 
+/// An expression.
 pub enum Expr
 {
-
+    ExprIdentifier(Identifier),
 }
 
 /// An abstract syntax tree.

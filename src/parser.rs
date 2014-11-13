@@ -2,7 +2,7 @@
 use ast;
 use std;
 
-use tokenizer::{Tokenizer,Token,TokenSymbol};
+use tokenizer::{Tokenizer,Token,TokenSymbol,TokenWord};
 
 pub struct Parser
 {
@@ -19,31 +19,76 @@ impl Parser
     }
     
     /// Parses a tokenizer.
-    pub fn parse<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>)
+    pub fn parse<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
         match it.peek() {
             Some(tok) => match tok {
                 TokenSymbol(ref symbol) => {
                     match symbol.as_slice() {
                         "#" => {
-                            self.parse_preprocessor(it);
+                            self.parse_preprocessor(it)
                         },
-                        _ => (),
+                        _ => Ok(()), // we don't know what to do with the symbol so just ignore.
                     }
                 },
-                _ => ()
+                _ => Ok(()) // we don't know how to handle this token.
             },
-            None => (),
+            None => Ok(()), // we reached the end.
         }
     }
     
     /// Parses a preprocessor statement.
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
-    pub fn parse_preprocessor<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>)
+    fn parse_preprocessor<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
         it.expect_assert(&TokenSymbol("#".to_string()));
         
-        println!("preprocessor!");
+        match try!(it.peek_word()).as_slice() {
+            "define" => {
+                self.parse_preprocessor_define(it)
+            },
+            a => { Err(format!("unknown thingy: '{}'", a).to_string()) },
+        }
     }
+    
+    fn parse_preprocessor_define<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
+    {
+        it.expect_assert(&TokenWord("define".to_string()));
+        
+        match it.peek() {
+            Some(tok) => match tok {
+                TokenSymbol(ref symbol) => {
+                    if symbol.as_slice() == "(" {
+                        self.parse_preprocessor_function(it)
+                    } else {
+                        Err("unexpected symbol".to_string())
+                    }
+                },
+                TokenWord(name) => {
+                    self.parse_preprocessor_constant(it, name)
+                }
+                ,
+                _ => Err("expected word or '('".to_string())
+            },
+            None => Err("expected token".to_string())
+        }
+    }
+    
+    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
+    {
+        unimplemented!();
+        Ok(())
+    }
+    
+    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
+    {
+        //let expression = self.parse_expression(it);
+    }
+    
+    fn parse_expression<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), ast::Expr>
+    {
+        Ok(())
+    }
+    
 }
 

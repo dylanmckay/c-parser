@@ -69,7 +69,7 @@ impl<I: Iterator<char>> Tokenizer<I>
             }
         }
         
-        Some(TokenWord(chars.to_string()))
+        Some(TokenWord(String::from_chars(chars.as_slice())))
     }
     
     fn read_possible_symbol(&mut self) -> Option<Token>
@@ -92,6 +92,28 @@ impl<I: Iterator<char>> Tokenizer<I>
                 }
             },
             None => (),
+        }
+    }
+    
+    pub fn next_word(&mut self) -> Result<String,String>
+    {
+        match self.next() {
+            Some(tok) => match tok {
+                TokenWord(word) => Ok(word),
+                _ => Err("expected word".to_string())
+            },
+            None => Err("unexpected end of file".to_string()),
+        }
+    }
+    
+    pub fn peek_word(&mut self) -> Result<String,String>
+    {
+        match self.peek() {
+            Some(tok) => match tok {
+                TokenWord(word) => Ok(word),
+                _ => Err("expected word".to_string())
+            },
+            None => Err("unexpected end of file".to_string()),
         }
     }
 }

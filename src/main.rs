@@ -10,6 +10,6 @@ fn main()
     let tk = tokenizer::Tokenizer::new(text.chars());
     let mut parser = parser::Parser::new();
     
-    parser.parse(tk)
+    parser.parse(tk);
     
 }
