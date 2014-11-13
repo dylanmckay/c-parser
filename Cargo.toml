@@ -1,0 +1,9 @@
+[package]
+
+name = "c_parser"
+version = "0.0.1"
+authors = ["Dylan McKay <dylanmckay34@gmail.com>"]
+
+[lib]
+name = "c_parser"
+path = "src/lib.rs"
