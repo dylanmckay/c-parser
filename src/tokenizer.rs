@@ -2,6 +2,11 @@
 use ast;
 use std;
 
+// NOTES:
+// Perhaps we should add a 'fork()' method to tokenizer.
+// The forked tokenizer would then read tokens, and could be used for lookahead.
+// And then we could destroy the forked tokenizer and then pass the original tokenizer
+// to the appropriate parse function.
 
 /// A token.
 #[deriving(Show,Clone,PartialEq,Eq)]
