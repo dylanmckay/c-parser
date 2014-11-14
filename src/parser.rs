@@ -95,10 +95,10 @@ impl Parser
         });
         
         if is_valid {
-            Ok(args.map_in_place(|a| match a {
+            Ok(FromIterator::from_iter(args.into_iter().map(|a| match a {
                 ast::ExprIdentifier(ident) => ident,
                 _ => unreachable!(),
-            }))
+            })))
         } else {
             Err("expected identifier".to_string())
         }

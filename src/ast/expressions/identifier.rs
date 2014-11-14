@@ -1,7 +1,7 @@
 use ast;
 
 /// An identifier.
-#[deriving(Show)]
+#[deriving(Clone,Show)]
 pub struct Identifier
 {
     pub name: String,
