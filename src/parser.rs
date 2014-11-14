@@ -2,7 +2,8 @@
 use ast;
 use std;
 
-use tokenizer::{Tokenizer,Token,TokenSymbol,TokenWord};
+use tokenizer::{Tokenizer,Token,TokenSymbol,TokenWord,TokenNewLine};
+use ast::Expression;
 
 pub struct Parser
 {
@@ -65,6 +66,7 @@ impl Parser
                     }
                 },
                 TokenWord(name) => {
+                    it.next(); // eat name.
                     self.parse_preprocessor_constant(it, name)
                 }
                 ,
@@ -82,14 +84,22 @@ impl Parser
     
     fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
     {
-        let expression = try!(self.parse_expression(it));
-        
+        let expr = match it.peek() {
+            // there is no following expression.
+            Some(TokenNewLine) | None => {
+                None
+            },
+            Some(t) => {
+                Some(try!(self.parse_expression(it)))
+            },
+        };
+
         self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineConstant(ast::preprocessor::Constant {
-            name: match ast::Identifier::from_name(name) {
+            name: match ast::expressions::Identifier::from_name(name) {
                 Some(ident) => ident,
                 None => { return Err("invalid identifier".to_string()); }
             },
-            expr: Some(expression),
+            expr: expr,
         })));
         
         Ok(())
@@ -97,7 +107,11 @@ impl Parser
     
     fn parse_expression<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<ast::Expr, String>
     {
-        unimplemented!();
+        match it.next()
+        {
+            Some(TokenWord(word)) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
+            Some(..) | None => unimplemented!()
+        }
     }
     
 }

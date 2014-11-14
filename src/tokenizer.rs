@@ -18,15 +18,36 @@ pub struct Tokenizer<I: Iterator<char>>
 {
     it: IteratorPeeker<char, I>,
     stack: Vec<Token>,
+    
+    // the possible symbols.
+    symbol_tokens: Vec<&'static str>,
 }
 
 impl<I: Iterator<char>> Tokenizer<I>
 {
     pub fn new(it: I) -> Tokenizer<I>
     {
+        let mut symbol_tokens = vec![
+            ";",
+            "(", ")",
+            
+            // arithmetic operators.
+            "+", "-", "*", "/",
+            
+            // arithmetic assignment operators.
+            "+=", "-=", "*=", "/="
+        ];
+        
+        // sort the symbol tokens by length, so that the longer symbols are at the beginning.
+        symbol_tokens.sort_by(|&e1,&e2| e2.len().cmp(&e1.len()));
+        
+        println!("{}", symbol_tokens);
+        
         Tokenizer {
             it: IteratorPeeker::new(it),
             stack: Vec::new(),
+            
+            symbol_tokens: symbol_tokens,
         }
     }
     
@@ -59,7 +80,7 @@ impl<I: Iterator<char>> Tokenizer<I>
                 None => break,
             };
             
-            if ast::is_valid_identifier_char(c) {
+            if ast::expressions::identifier::is_valid_char(c) {
 
                 chars.push(c);
                 
@@ -150,7 +171,7 @@ impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
             }
         }
         
-        if ast::is_valid_first_identifier_char(first_char) {
+        if ast::expressions::identifier::is_valid_first_char(first_char) {
             self.read_identifier()
         } else {
             self.read_possible_symbol()

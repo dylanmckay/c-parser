@@ -1,14 +1,21 @@
 
+use ast;
 use ast::preprocessor;
-use ast::Statement;
 
 
 
 /// A preprocessor #define
+#[deriving(Show)]
 pub enum Define
 {
     DefineFunction(preprocessor::Function),
     DefineConstant(preprocessor::Constant),
 }
 
-impl Statement for Define { }
+impl ast::Statement for Define
+{
+    fn to_stmt(self) -> ast::Stmt
+    {
+        ast::StmtDefine(self)
+    }
+}

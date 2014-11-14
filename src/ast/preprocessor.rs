@@ -1,7 +1,9 @@
 
-use ast::{Identifier, Expr};
+use ast::Expr;
+use ast::expressions::Identifier;
 
 /// A #define func(a,b,c)
+#[deriving(Show)]
 pub struct Function
 {
     pub name: Identifier,
@@ -9,6 +11,7 @@ pub struct Function
 }
 
 /// A `#define ABCD` or `#define ABCD 1`
+#[deriving(Show)]
 pub struct Constant
 {
     pub name: Identifier,

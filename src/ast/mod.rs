@@ -1,61 +1,39 @@
 
+use std;
+
 pub mod statements;
+pub mod expressions;
 pub mod preprocessor;
 
-/// Checks whether a character is a valid first character for an identifier.
-pub fn is_valid_first_identifier_char(c: char) -> bool
-{
-    match c {
-        '_' => true,
-        _ => return c.is_alphabetic(),
-    }
-}
 
-/// Checks whether a character is allowed to exist inside an identifier (not including first character).
-pub fn is_valid_identifier_char(c: char) -> bool
-{
-    match c {
-        '_' => true,
-        _ => return c.is_alphanumeric(),
-    }
-}
 
-/// An identifier.
-pub struct Identifier
-{
-    pub name: String,
-}
-
-impl Identifier
-{
-    /// Creates a new identifier from a name.
-    /// Returns None if name is an invalid identifier.
-    pub fn from_name(name: String) -> Option<Identifier>
-    {
-        // TODO: validate identifier.
-        Some(Identifier {
-            name: name,
-        })
-    }
-}
 
 /// A statement.
-pub trait Statement { }
+pub trait Statement : std::fmt::Show
+{
+    fn to_stmt(self) -> Stmt;
+}
 
+#[deriving(Show)]
 pub enum Stmt
 {
     StmtDefine(statements::Define),
 }
 
-pub trait Expression { }
+pub trait Expression : std::fmt::Show
+{
+    fn to_expr(self) -> Expr;
+}
 
 /// An expression.
+#[deriving(Show)]
 pub enum Expr
 {
-    ExprIdentifier(Identifier),
+    ExprIdentifier(expressions::Identifier),
 }
 
 /// An abstract syntax tree.
+#[deriving(Show)]
 pub struct Ast
 {
     pub nodes: Vec<Stmt>,
