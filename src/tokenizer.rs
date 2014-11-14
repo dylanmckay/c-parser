@@ -1,5 +1,6 @@
 
 use ast;
+use std;
 
 
 /// A token.
@@ -16,7 +17,7 @@ pub enum Token
 /// A tokenizer.
 pub struct Tokenizer<I: Iterator<char>>
 {
-    it: IteratorPeeker<char, I>,
+    pub it: IteratorPeeker<char, I>,
     stack: Vec<Token>,
     
     // the possible symbols.
@@ -97,12 +98,27 @@ impl<I: Iterator<char>> Tokenizer<I>
     fn read_possible_symbol(&mut self) -> Option<Token>
     {
         match self.it.next() {
+            Some(c) => {
+                let mut read_chars = String::from_char(1, c);
+                
+                for sym in self.symbol_tokens.iter() {
+                    for (index,symbol_char) in sym.chars().enumerate() {
+                        
+                    }
+                }
+            },
+            None => unreachable!(),
+        };
+        
+        None
+        /*
+        match self.it.next() {
             Some(c) => match c {
                 '#' => Some(TokenSymbol("#".to_string())),
                 t => panic!(format!("unknown token: '{}'", t)),
             },
             None => None
-        }
+        }*/
     }
     
     pub fn expect_assert(&mut self, tok: &Token)
@@ -160,7 +176,7 @@ impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
             self.it.next();
             return Some(TokenNewLine);
         } else if first_char == '\r' {
-            match self.it.peek_peek() {
+            match self.it.peek_n(1) {
                 Some('\n') => {
                     self.it.next(); // skip '\r'.
                     self.it.next(); // skip '\n'.
@@ -214,19 +230,35 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
         Some(val)
     }
     
-    pub fn peek_peek(&mut self) -> Option<T>
+    /// Peeks at the n'th character from the current index.
+    pub fn peek_n(&mut self, n: u32) -> Option<T>
     {
-        let first = match self.next() {
-            Some(first) => first,
-            None => { return None; },
-        };
+        let mut read_elems = Vec::new();
         
-        let second = self.peek();
+        for i in range(0,n+1) {
         
-        self.stack.push(first);
+            match self.next() {
+                Some(e) => {
+                    read_elems.push(e);
+                },
+                None => {
+                    break;
+                },
+            }
+        }
+
+        for read_char in read_elems.iter().rev() {
+            self.stack.push(read_char.clone());
+        }
         
-        return second;
+        read_elems.last().map(|a| a.clone())
     }
+    
+}
+
+impl<T: std::fmt::Show + Clone, U: Iterator<T>> IteratorPeeker<T, U>
+{
+    
 }
 
 impl<T, U: Iterator<T>> Iterator<T> for IteratorPeeker<T, U>
