@@ -2,6 +2,7 @@
 pub mod ast;
 pub mod parser;
 pub mod token;
+pub mod util;
 
 
 fn main()

@@ -42,10 +42,10 @@ impl Parser
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
     fn parse_preprocessor<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token(token::KindSymbol, "#".to_string()));
+        it.expect_assert(&Token::hash());
         
-        match try!(it.peek_word()).as_slice() {
-            "define" => {
+        match it.peek() {
+            Some(Token(token::KindWord, ref word)) if word.as_slice() == "define" => {
                 self.parse_preprocessor_define(it)
             },
             a => { Err(format!("unknown thingy: '{}'", a).to_string()) },

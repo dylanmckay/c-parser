@@ -1,5 +1,6 @@
 
 use ast;
+use util;
 use std;
 
 // NOTES:
@@ -9,6 +10,7 @@ use std;
 // to the appropriate parse function.
 //
 // TODO: seperate keyword and identifier?
+
 
 /// The type of a token.
 #[deriving(Clone,PartialEq,Eq)]
@@ -21,15 +23,36 @@ pub enum TokenKind
     KindNewLine,
 }
 
+impl std::fmt::Show for TokenKind
+{
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::FormatError>
+    {
+        match self {
+            &KindSymbol => "symbol",
+            &KindWord => "word",
+            &KindIntegerLiteral => "integer",
+            &KindStringLiteral => "string",
+            &KindNewLine => "new line",
+        }.fmt(formatter)
+    }
+}
+
 /// A token.
 #[deriving(Clone,PartialEq,Eq)]
 pub struct Token(pub TokenKind, pub String);
 
 impl Token
 {
-    pub fn new_line() -> Token
+    pub fn new_line() -> Token { Token(KindNewLine, "new-line".to_string()) }
+    pub fn left_parenthesis() -> Token { Token(KindSymbol, "(".to_string()) }
+    pub fn hash() -> Token { Token(KindSymbol, "#".to_string()) }
+    
+    /// Checks if the token is of a given kind.
+    pub fn is(&self, kind: TokenKind) -> bool
     {
-        Token(KindNewLine, "new-line".to_string())
+        match self {
+            &Token(k, _) => k == kind,
+        }
     }
 }
 
@@ -55,6 +78,7 @@ pub struct Tokenizer<I: Iterator<char>>
 
 impl<I: Iterator<char>> Tokenizer<I>
 {
+    /// Creates a new tokenizer.
     pub fn new(it: I) -> Tokenizer<I>
     {
         let mut symbol_tokens = vec![
@@ -99,7 +123,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         Some(val)
     }
     
-    /// Peeks at the n'th character from the current index.
+    /// Peeks at the n'th token from the current index.
     pub fn peek_n(&mut self, n: uint) -> Option<Token>
     {
         let mut read_elems = Vec::new();
@@ -174,22 +198,118 @@ impl<I: Iterator<char>> Tokenizer<I>
         None
     }
     
-    pub fn expect_assert(&mut self, tok: &Token)
+    /// Checks if the next token is the specified token.
+    pub fn expect(&mut self, expected: &Token) -> Result<Token,String>
     {
-        match self.next() {
-            Some(next_tok) => {
-                if &next_tok != tok {
-                    panic!(format!("expected {}", tok))
-                }
-            },
-            None => (),
-        }
+        self.internal_expect(expected, || ())
     }
     
-    pub fn expect_several<I: Iterator<Token>>(&mut self, mut tokens: I) -> Result<Token,String>
+    /// Checks if the next token is the specified token, calling `panic!` if it isn't.
+    pub fn expect_assert(&mut self, expected: &Token) -> Token
+    {
+        self.internal_expect(expected, || panic!(format!("expected {}", expected))).unwrap()
+    }
+    
+    /// Checks if the next token is the specified token, calling `on_fail` if it isn't.
+    pub fn internal_expect(&mut self, expected: &Token, on_fail: ||) -> Result<Token,String>
     {
         match self.next() {
+            Some(token) => {
+                if &token == expected {
+                    return Ok(token);
+                }
+            },
+            _ => ()
+        }
+        
+        on_fail();
+        Err(format!("expected {}", expected))
+    }
+    
+    /// Checks that the next token is of a set of kinds.
+    pub fn expect_kinds<I: Iterator<TokenKind>>(&mut self, expected_kinds: I) -> Result<Token,String>
+    {
+        self.internal_expect_kinds(expected_kinds, |_| ())
+    }
+    
+    /// Checks that the next token is of a set of kinds, calling `on_fail` if it is not.
+    pub fn expect_assert_kinds<I: Iterator<TokenKind>>(&mut self, expected_kinds: I) -> Token
+    {
+        self.internal_expect_kinds(expected_kinds, |kind_list| panic!(format!("expected one of: {}", util::build_list_str(kind_list.iter())))).unwrap()
+    }
+    
+    /// Checks that the next token is of a set of kinds, calling `on_fail` if it is not.
+    pub fn internal_expect_kinds<I: Iterator<TokenKind>>(&mut self, mut expected_kinds: I, on_fail: |&Vec<TokenKind>|) -> Result<Token,String>
+    {
+        let mut kind_list = Vec::new();
+        
+        match self.next() {
+            Some(token) => match token {
+                Token(read_kind, _) => {
+                
+                    // iterate through the expected kinds and check.
+                    for expected_kind in expected_kinds {
+                        kind_list.push(expected_kind);
+                        
+                        // check if we found a match.
+                        if read_kind == expected_kind {
+                            return Ok(token);
+                        }
+                    }
+                }
+            },
+            None => ()
+        }
+        
+        on_fail(&kind_list);
+        Err(format!("expected one of: {}", util::build_list_str(kind_list.iter())))
+    }
+    
+    pub fn expect_kind(&mut self, kind: TokenKind) -> Result<Token,String>
+    {
+        self.internal_expect_kind(kind, || ())
+    }
+    
+    pub fn expect_assert_kind(&mut self, kind: TokenKind) -> Token
+    {
+        self.internal_expect_kind(kind, || panic!(format!("expected {}", kind))).unwrap()
+    }
+    
+    /// Reads the next token, giving an Ok(Token) if it is of the specified kind, or Err(String) otherwise.
+    pub fn internal_expect_kind(&mut self, kind: TokenKind, on_fail: ||) -> Result<Token,String>
+    {
+        match self.next() {
+            Some(token) => if token.is(kind) {
+                return Ok(token);
+            },
+            _ => ()
+        }
+        
+        on_fail();
+        Err(format!("expected {}", kind))
+    }
+    
+    /// Expects a token out of a set of tokens.
+    pub fn expect_one_of<I: Iterator<Token>>(&mut self, tokens: I) -> Result<Token,String>
+    {
+        self.internal_expect_one_of(tokens, |_|())
+    }
+    
+    /// Asserts that the next token is one of a set.
+    pub fn expect_assert_one_of<I: Iterator<Token>>(&mut self, tokens: I) -> Token
+    {
+        self.internal_expect_one_of(tokens, |token_list| panic!(format!("expected one of: {}", util::build_list_str(token_list.iter())))).unwrap()
+    }
+    
+    /// Expects a token out of a set of tokens, calling a closure if the token isn't matched.
+    fn internal_expect_one_of<I: Iterator<Token>>(&mut self, mut tokens: I, on_fail: |&Vec<Token>|) -> Result<Token,String>
+    {
+        let mut token_list = Vec::new();
+        
+        match self.next() {
             Some(next_tok) => {
+                token_list.push(next_tok.clone());
+                
                 match tokens.find(|a| a == &next_tok) {
                     Some(tok) => {
                         return Ok(tok);
@@ -199,30 +319,9 @@ impl<I: Iterator<char>> Tokenizer<I>
             },
             None => (),
         }
-        unimplemented!();
-        Err(format!("expected one of: {}", "as"))
-    }
-    
-    pub fn next_word(&mut self) -> Result<String,String>
-    {
-        match self.next() {
-            Some(tok) => match tok {
-                Token(KindWord, s) => Ok(s),
-                _ => Err("expected word".to_string())
-            },
-            None => Err("unexpected end of file".to_string()),
-        }
-    }
-    
-    pub fn peek_word(&mut self) -> Result<String,String>
-    {
-        match self.peek() {
-            Some(tok) => match tok {
-                Token(KindWord, s) => Ok(s),
-                _ => Err("expected word".to_string())
-            },
-            None => Err("unexpected end of file".to_string()),
-        }
+        
+        on_fail(&token_list);
+        Err(format!("expected one of: {}", util::build_list_str(token_list.iter())))
     }
 }
 
@@ -385,22 +484,5 @@ impl<U: Iterator<char>> IteratorPeeker<char, U>
         }
     }
 }
-/*
-fn build_token_list_str<I: Iterator<Token>>(it: I) -> String
-{
-    let mut result = String::new();
-    
-    let mut peekable = it.peekable();
-    
-    for tok in peekable {
-    
-        result.push_str(format!("{}", tok).as_slice());
-        
-        if !peekable.is_empty() {
-            result.push_str(", ");
-        }
-    }
-    
-    result
-}*/
+
 
