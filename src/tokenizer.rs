@@ -7,16 +7,30 @@ use std;
 // The forked tokenizer would then read tokens, and could be used for lookahead.
 // And then we could destroy the forked tokenizer and then pass the original tokenizer
 // to the appropriate parse function.
+//
+// TODO: seperate keyword and identifier?
+
+/// The type of a token.
+#[deriving(Clone,PartialEq,Eq)]
+pub enum TokenKind
+{
+    KindSymbol,
+    KindWord,
+    KindIntegerLiteral,
+    KindStringLiteral,
+    KindNewLine,
+}
 
 /// A token.
 #[deriving(Clone,PartialEq,Eq)]
-pub enum Token
+pub struct Token(pub TokenKind, pub String);
+
+impl Token
 {
-    TokenSymbol(String),
-    TokenWord(String),
-    TokenIntegerLiteral(String),
-    TokenStringLiteral(String),
-    TokenNewLine,
+    pub fn new_line() -> Token
+    {
+        Token(KindNewLine, "new-line".to_string())
+    }
 }
 
 impl std::fmt::Show for Token
@@ -24,10 +38,7 @@ impl std::fmt::Show for Token
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::FormatError>
     {
         match self {
-            &TokenSymbol(ref s) | &TokenWord(ref s) |
-            &TokenIntegerLiteral(ref s) |
-            &TokenStringLiteral(ref s)  => s.fmt(formatter),
-            &TokenNewLine => "new-line".fmt(formatter),
+            &Token(_, ref s) => s.fmt(formatter),
         }
     }
 }
@@ -132,8 +143,8 @@ impl<I: Iterator<char>> Tokenizer<I>
                 break;
             }
         }
-        
-        Some(TokenWord(String::from_chars(chars.as_slice())))
+
+        Some(Token(KindWord, String::from_chars(chars.as_slice())))
     }
     
     fn read_possible_symbol(&mut self) -> Option<Token>
@@ -156,7 +167,7 @@ impl<I: Iterator<char>> Tokenizer<I>
             self.it.eat(sym.len());
             
             // we have found a symbol match.
-            return Some(TokenSymbol(sym.to_string()));
+            return Some(Token(KindSymbol, sym.to_string()));
         }
         
         // no matches.
@@ -196,7 +207,7 @@ impl<I: Iterator<char>> Tokenizer<I>
     {
         match self.next() {
             Some(tok) => match tok {
-                TokenWord(word) => Ok(word),
+                Token(KindWord, s) => Ok(s),
                 _ => Err("expected word".to_string())
             },
             None => Err("unexpected end of file".to_string()),
@@ -207,7 +218,7 @@ impl<I: Iterator<char>> Tokenizer<I>
     {
         match self.peek() {
             Some(tok) => match tok {
-                TokenWord(word) => Ok(word),
+                Token(KindWord, s) => Ok(s),
                 _ => Err("expected word".to_string())
             },
             None => Err("unexpected end of file".to_string()),
@@ -233,14 +244,14 @@ impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
         
         if first_char == '\n' {
             self.it.next();
-            return Some(TokenNewLine);
+            return Some(Token::new_line());
         } else if first_char == '\r' {
             match self.it.peek_n(1) {
                 Some('\n') => {
                     self.it.next(); // skip '\r'.
                     self.it.next(); // skip '\n'.
                     
-                    return Some(TokenNewLine);
+                    return Some(Token::new_line());
                 },
                 Some(..) | None => ()
             }
