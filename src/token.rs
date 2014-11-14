@@ -131,6 +131,12 @@ impl<I: Iterator<char>> Tokenizer<I>
         Some(val)
     }
     
+    /// Eats the next token, disregarding it.
+    pub fn eat(&mut self)
+    {
+        self.next();
+    }
+    
     /// Peeks at the n'th token from the current index.
     pub fn peek_n(&mut self, n: uint) -> Option<Token>
     {

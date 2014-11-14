@@ -3,7 +3,7 @@ use ast;
 
 use token;
 use token::{Tokenizer,Token};
-use ast::Expression;
+use ast::{Expr,ExprIdentifier,Expression};
 
 pub struct Parser
 {
@@ -78,7 +78,33 @@ impl Parser
     
     fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
     {
+        let parameter_list = self.parse_preprocessor_function_parameters(it);
+        
         unimplemented!();
+    }
+    
+    /// Parses the parameter list of a #define function(a,b,c)
+    /// The next token should be '(' at the point of calling this function.
+    fn parse_preprocessor_function_parameters<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<ast::expressions::Identifier>, String>
+    {
+        // here we abuse this function because a preprocessor parameter list
+        // resembles a regular argument list, but with all arguments being identifiers.
+        let args = try!(self.parse_argument_list(it));
+        
+        // whether the argument list is a valid parameter list; that all its expressions are identifiers.
+        let is_valid = args.iter().all(|a| match a {
+            &ExprIdentifier(..) => true,
+            _ => false,
+        });
+        
+        if is_valid {
+            Ok(args.map_in_place(|a| match a {
+                ast::ExprIdentifier(ident) => ident,
+                _ => unreachable!(),
+            }))
+        } else {
+            Err("expected identifier".to_string())
+        }
     }
     
     fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
@@ -89,7 +115,7 @@ impl Parser
                 None
             },
             Some(..) => {
-                Some(try!(self.parse_expression(it)))
+                Some(try!(self.parse_expression(&mut it)))
             },
         };
 
@@ -104,7 +130,7 @@ impl Parser
         Ok(())
     }
     
-    fn parse_expression<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<ast::Expr, String>
+    fn parse_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
     {
         match it.next()
         {
@@ -118,12 +144,26 @@ impl Parser
     /// For example: "(abc, 123, bvs)".
     fn parse_argument_list<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<ast::Expr>, String>
     {
-        unimplemented!();
-    }
-    
-    fn parse_token_parenthesis_list<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<Token>, String>
-    {
-        unimplemented!();
+        it.expect_assert(&Token::left_parenthesis());
+        
+        let mut expressions = Vec::new();
+        
+        loop {
+            
+            match it.peek() {
+                Some(ref token) if token == &Token::right_parenthesis() => {
+                    break;
+                },
+                _ => (),
+            }
+            
+            let expr = try!(self.parse_expression(&mut it));
+            expressions.push(expr);
+        }
+        
+        it.expect_assert(&Token::right_parenthesis());
+        
+        Ok(expressions)
     }
     
 }

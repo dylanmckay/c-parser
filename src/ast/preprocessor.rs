@@ -8,6 +8,7 @@ pub struct Function
 {
     pub name: Identifier,
     pub args: Vec<Identifier>,
+    pub expr: Option<Expr>
 }
 
 /// A `#define ABCD` or `#define ABCD 1`
