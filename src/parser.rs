@@ -1,7 +1,7 @@
 
 use ast;
 
-use tokenizer::{Tokenizer,TokenSymbol,TokenWord,TokenNewLine};
+use tokenizer::{Tokenizer,Token,TokenSymbol,TokenWord,TokenNewLine};
 use ast::Expression;
 
 pub struct Parser
@@ -59,16 +59,23 @@ impl Parser
             Some(TokenWord(name)) => {
                 it.next(); // eat name.
                 
-   
-                self.parse_preprocessor_constant(it, name)
-                
+                match it.peek() {
+                    // check if it is a function.
+                    Some(TokenSymbol(ref sym)) if sym.as_slice() == "(" => {
+                        self.parse_preprocessor_function(it, name)
+                    },
+                    // it is a constant
+                    Some(..) | None => {
+                        self.parse_preprocessor_constant(it, name)
+                    },
+                }
                 
             },
             _ => Err("expected identifier".to_string())
         }
     }
     
-    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
+    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
     {
         unimplemented!();
     }
@@ -103,6 +110,19 @@ impl Parser
             Some(TokenWord(word)) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
             Some(..) | None => unimplemented!()
         }
+    }
+    
+    
+    /// Parses an argument list (a set of expressions, in parentheses, seperated by commas).
+    /// For example: "(abc, 123, bvs)".
+    fn parse_argument_list<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<ast::Expr>, String>
+    {
+        unimplemented!();
+    }
+    
+    fn parse_token_parenthesis_list<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<Token>, String>
+    {
+        unimplemented!();
     }
     
 }

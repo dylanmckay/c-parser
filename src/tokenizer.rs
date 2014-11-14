@@ -9,7 +9,7 @@ use std;
 // to the appropriate parse function.
 
 /// A token.
-#[deriving(Show,Clone,PartialEq,Eq)]
+#[deriving(Clone,PartialEq,Eq)]
 pub enum Token
 {
     TokenSymbol(String),
@@ -17,6 +17,19 @@ pub enum Token
     TokenIntegerLiteral(String),
     TokenStringLiteral(String),
     TokenNewLine,
+}
+
+impl std::fmt::Show for Token
+{
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::FormatError>
+    {
+        match self {
+            &TokenSymbol(ref s) | &TokenWord(ref s) |
+            &TokenIntegerLiteral(ref s) |
+            &TokenStringLiteral(ref s)  => s.fmt(formatter),
+            &TokenNewLine => "new-line".fmt(formatter),
+        }
+    }
 }
 
 /// A tokenizer.
@@ -160,6 +173,23 @@ impl<I: Iterator<char>> Tokenizer<I>
             },
             None => (),
         }
+    }
+    
+    pub fn expect_several<I: Iterator<Token>>(&mut self, mut tokens: I) -> Result<Token,String>
+    {
+        match self.next() {
+            Some(next_tok) => {
+                match tokens.find(|a| a == &next_tok) {
+                    Some(tok) => {
+                        return Ok(tok);
+                    },
+                    None => (),
+                }
+            },
+            None => (),
+        }
+        unimplemented!();
+        Err(format!("expected one of: {}", "as"))
     }
     
     pub fn next_word(&mut self) -> Result<String,String>
@@ -344,5 +374,22 @@ impl<U: Iterator<char>> IteratorPeeker<char, U>
         }
     }
 }
-
+/*
+fn build_token_list_str<I: Iterator<Token>>(it: I) -> String
+{
+    let mut result = String::new();
+    
+    let mut peekable = it.peekable();
+    
+    for tok in peekable {
+    
+        result.push_str(format!("{}", tok).as_slice());
+        
+        if !peekable.is_empty() {
+            result.push_str(", ");
+        }
+    }
+    
+    result
+}*/
 
