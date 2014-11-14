@@ -137,6 +137,7 @@ impl Parser
         match it.peek() {
             // there is no following expression.
             Some(Token(token::KindNewLine,_)) | None => {
+                it.eat();
                 Ok(None)
             },
             Some(..) => {
