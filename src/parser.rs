@@ -22,19 +22,16 @@ impl Parser
     /// Parses a tokenizer.
     pub fn parse<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
-        match it.peek() {
-            Some(tok) => match tok {
-                Token(token::KindSymbol, ref symbol) => {
-                    match symbol.as_slice() {
-                        "#" => {
-                            self.parse_preprocessor(&mut it)
-                        },
-                        _ => Ok(()), // we don't know what to do with the symbol so just ignore.
-                    }
+        loop {
+            match it.peek() {
+                Some(tok) => match tok {
+                    Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
+                        try!(self.parse_preprocessor(&mut it))
+                    },
+                    _ => { return Err(format!("unknown token: {}", tok)); } // we don't know how to handle this token.
                 },
-                _ => Ok(()) // we don't know how to handle this token.
-            },
-            None => Ok(()), // we reached the end.
+                None => { return Ok(()); }, // we reached the end.
+            }
         }
     }
     
