@@ -1,7 +1,8 @@
 
 use ast;
 
-use token::{Tokenizer,Token,KindSymbol,KindWord,KindNewLine};
+use token;
+use token::{Tokenizer,Token};
 use ast::Expression;
 
 pub struct Parser
@@ -23,7 +24,7 @@ impl Parser
     {
         match it.peek() {
             Some(tok) => match tok {
-                Token(KindSymbol, ref symbol) => {
+                Token(token::KindSymbol, ref symbol) => {
                     match symbol.as_slice() {
                         "#" => {
                             self.parse_preprocessor(it)
@@ -41,7 +42,7 @@ impl Parser
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
     fn parse_preprocessor<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token(KindSymbol, "#".to_string()));
+        it.expect_assert(&Token(token::KindSymbol, "#".to_string()));
         
         match try!(it.peek_word()).as_slice() {
             "define" => {
@@ -53,15 +54,15 @@ impl Parser
     
     fn parse_preprocessor_define<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token(KindWord, "define".to_string()));
+        it.expect_assert(&Token(token::KindWord, "define".to_string()));
         
         match it.peek() {
-            Some(Token(KindWord, name)) => {
+            Some(Token(token::KindWord, name)) => {
                 it.next(); // eat name.
                 
                 match it.peek() {
                     // check if it is a function.
-                    Some(Token(KindSymbol, ref sym)) if sym.as_slice() == "(" => {
+                    Some(Token(token::KindSymbol, ref sym)) if sym.as_slice() == "(" => {
                         self.parse_preprocessor_function(it, name)
                     },
                     // it is a constant
@@ -84,7 +85,7 @@ impl Parser
     {
         let expr = match it.peek() {
             // there is no following expression.
-            Some(Token(KindNewLine,_)) | None => {
+            Some(Token(token::KindNewLine,_)) | None => {
                 None
             },
             Some(..) => {
@@ -107,7 +108,7 @@ impl Parser
     {
         match it.next()
         {
-            Some(Token(KindWord,word)) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
+            Some(Token(token::KindWord,word)) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
             Some(..) | None => unimplemented!()
         }
     }
