@@ -54,7 +54,7 @@ impl Parser
     
     fn parse_preprocessor_define<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token(token::KindWord, "define".to_string()));
+        it.expect_assert(&Token::define());
         
         match it.peek() {
             Some(Token(token::KindWord, name)) => {

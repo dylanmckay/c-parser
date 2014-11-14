@@ -43,9 +43,17 @@ pub struct Token(pub TokenKind, pub String);
 
 impl Token
 {
+    // Special characters.
     pub fn new_line() -> Token { Token(KindNewLine, "new-line".to_string()) }
+    
+    // Symbols.
     pub fn left_parenthesis() -> Token { Token(KindSymbol, "(".to_string()) }
+    pub fn right_parenthesis() -> Token { Token(KindSymbol, ")".to_string()) }
     pub fn hash() -> Token { Token(KindSymbol, "#".to_string()) }
+    pub fn semicolon() -> Token { Token(KindSymbol, ";".to_string()) }
+    
+    // Keywords.
+    pub fn define() -> Token { Token(KindWord, "define".to_string()) }
     
     /// Checks if the token is of a given kind.
     pub fn is(&self, kind: TokenKind) -> bool
