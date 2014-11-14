@@ -57,22 +57,15 @@ impl Parser
         it.expect_assert(&TokenWord("define".to_string()));
         
         match it.peek() {
-            Some(tok) => match tok {
-                TokenSymbol(ref symbol) => {
-                    if symbol.as_slice() == "(" {
-                        self.parse_preprocessor_function(it)
-                    } else {
-                        Err("unexpected symbol".to_string())
-                    }
-                },
-                TokenWord(name) => {
-                    it.next(); // eat name.
-                    self.parse_preprocessor_constant(it, name)
-                }
-                ,
-                _ => Err("expected word or '('".to_string())
+            Some(TokenWord(name)) => {
+                it.next(); // eat name.
+                
+   
+                self.parse_preprocessor_constant(it, name)
+                
+                
             },
-            None => Err("expected token".to_string())
+            _ => Err("expected identifier".to_string())
         }
     }
     
