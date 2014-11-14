@@ -54,8 +54,13 @@ impl Parser
         it.expect_assert(&Token::define());
         
         match it.peek() {
-            Some(Token(token::KindWord, name)) => {
+            Some(Token(token::KindWord, name_str)) => {
                 it.next(); // eat name.
+                
+                let name = match ast::expressions::Identifier::from_name(name_str) {
+                    Some(ident) => ident,
+                    None => { return Err("invalid identifier".to_string()); }
+                };
                 
                 match it.peek() {
                     // check if it is a function.
@@ -73,13 +78,20 @@ impl Parser
         }
     }
     
-    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: String) -> Result<(), String>
+    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
     {
-        let parameter_list = self.parse_preprocessor_function_parameters(it);
+        let parameter_list = try!(self.parse_preprocessor_function_parameters(it));
+        let expression = try!(self.parse_preprocessor_expression(it));
         
-        println!("{}", parameter_list);
+        self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineFunction(ast::preprocessor::Function {
+            name: name,
+            params: parameter_list,
+            expr: expression,
+        })));
         
-        unimplemented!();
+        println!("finished!");
+        
+        Ok(())
     }
     
     /// Parses the parameter list of a #define function(a,b,c)
@@ -106,27 +118,31 @@ impl Parser
         }
     }
     
-    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: String) -> Result<(), String>
+    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
     {
-        let expr = match it.peek() {
-            // there is no following expression.
-            Some(Token(token::KindNewLine,_)) | None => {
-                None
-            },
-            Some(..) => {
-                Some(try!(self.parse_expression(it)))
-            },
-        };
+        let expression = try!(self.parse_preprocessor_expression(it));
 
         self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineConstant(ast::preprocessor::Constant {
-            name: match ast::expressions::Identifier::from_name(name) {
-                Some(ident) => ident,
-                None => { return Err("invalid identifier".to_string()); }
-            },
-            expr: expr,
+            name: name,
+            expr: expression,
         })));
         
         Ok(())
+    }
+    
+    /// Parses an optional preprocessor expression.
+    /// `#define asdf [expression]`.
+    fn parse_preprocessor_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Option<ast::Expr>,String>
+    {
+        match it.peek() {
+            // there is no following expression.
+            Some(Token(token::KindNewLine,_)) | None => {
+                Ok(None)
+            },
+            Some(..) => {
+                Ok(Some(try!(self.parse_expression(it))))
+            },
+        }
     }
     
     fn parse_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
@@ -155,7 +171,6 @@ impl Parser
                 },
                 // eat comma, we explicitly check for it the previous iteration.
                 Some(ref token) if token == &Token::comma() => it.eat(),
-                Some(ref tok) => println!("token!: {}", tok),
                 _ => (),
             }
             

@@ -7,7 +7,7 @@ use ast::expressions::Identifier;
 pub struct Function
 {
     pub name: Identifier,
-    pub args: Vec<Identifier>,
+    pub params: Vec<Identifier>,
     pub expr: Option<Expr>
 }
 
