@@ -77,6 +77,8 @@ impl Parser
     {
         let parameter_list = self.parse_preprocessor_function_parameters(it);
         
+        println!("{}", parameter_list);
+        
         unimplemented!();
     }
     
@@ -151,11 +153,17 @@ impl Parser
                 Some(ref token) if token == &Token::right_parenthesis() => {
                     break;
                 },
+                // eat comma, we explicitly check for it the previous iteration.
+                Some(ref token) if token == &Token::comma() => it.eat(),
+                Some(ref tok) => println!("token!: {}", tok),
                 _ => (),
             }
             
             let expr = try!(self.parse_expression(it));
             expressions.push(expr);
+
+            let peeked_token = try!(self::expect_token(it.peek()));
+            try!(peeked_token.expect_one_of([Token::comma(), Token::right_parenthesis()].iter()));
         }
         
         it.expect_assert(&Token::right_parenthesis());
@@ -163,5 +171,14 @@ impl Parser
         Ok(expressions)
     }
     
+}
+
+/// Unwraps an `Option<Token>`, giving either Ok(Token) or Err(msg).
+fn expect_token(opt: Option<Token>) -> Result<Token,String>
+{
+    match opt {
+        Some(tok) => Ok(tok),
+        None => Err("expected a token".to_string()),
+    }
 }
 
