@@ -1,7 +1,7 @@
 
 use ast;
 
-use tokenizer::{Tokenizer,Token,KindSymbol,KindWord,KindNewLine};
+use token::{Tokenizer,Token,KindSymbol,KindWord,KindNewLine};
 use ast::Expression;
 
 pub struct Parser

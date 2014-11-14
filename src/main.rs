@@ -1,7 +1,7 @@
 
 pub mod ast;
 pub mod parser;
-pub mod tokenizer;
+pub mod token;
 
 
 fn main()
@@ -15,7 +15,7 @@ fn main()
 #[allow(dead_code)]
 fn test_tokenizer(text: &'static str)
 {
-    let mut tk = tokenizer::Tokenizer::new(text.chars());
+    let mut tk = token::Tokenizer::new(text.chars());
     
     for token in tk {
         println!("{}", token);
@@ -25,7 +25,7 @@ fn test_tokenizer(text: &'static str)
 #[allow(dead_code)]
 fn test_parser(text: &'static str)
 {
-    let tk = tokenizer::Tokenizer::new(text.chars());
+    let tk = token::Tokenizer::new(text.chars());
     let mut parser = parser::Parser::new();
     
     match parser.parse(tk) {
