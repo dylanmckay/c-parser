@@ -27,7 +27,7 @@ impl Parser
                 Token(token::KindSymbol, ref symbol) => {
                     match symbol.as_slice() {
                         "#" => {
-                            self.parse_preprocessor(it)
+                            self.parse_preprocessor(&mut it)
                         },
                         _ => Ok(()), // we don't know what to do with the symbol so just ignore.
                     }
@@ -40,7 +40,7 @@ impl Parser
     
     /// Parses a preprocessor statement.
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
-    fn parse_preprocessor<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
+    fn parse_preprocessor<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
         it.expect_assert(&Token::hash());
         
@@ -52,7 +52,7 @@ impl Parser
         }
     }
     
-    fn parse_preprocessor_define<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
+    fn parse_preprocessor_define<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
         it.expect_assert(&Token::define());
         
@@ -76,7 +76,7 @@ impl Parser
         }
     }
     
-    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
+    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: String) -> Result<(), String>
     {
         let parameter_list = self.parse_preprocessor_function_parameters(it);
         
@@ -85,7 +85,7 @@ impl Parser
     
     /// Parses the parameter list of a #define function(a,b,c)
     /// The next token should be '(' at the point of calling this function.
-    fn parse_preprocessor_function_parameters<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<ast::expressions::Identifier>, String>
+    fn parse_preprocessor_function_parameters<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Vec<ast::expressions::Identifier>, String>
     {
         // here we abuse this function because a preprocessor parameter list
         // resembles a regular argument list, but with all arguments being identifiers.
@@ -107,7 +107,7 @@ impl Parser
         }
     }
     
-    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
+    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: String) -> Result<(), String>
     {
         let expr = match it.peek() {
             // there is no following expression.
@@ -115,7 +115,7 @@ impl Parser
                 None
             },
             Some(..) => {
-                Some(try!(self.parse_expression(&mut it)))
+                Some(try!(self.parse_expression(it)))
             },
         };
 
@@ -142,7 +142,7 @@ impl Parser
     
     /// Parses an argument list (a set of expressions, in parentheses, seperated by commas).
     /// For example: "(abc, 123, bvs)".
-    fn parse_argument_list<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<Vec<ast::Expr>, String>
+    fn parse_argument_list<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Vec<ast::Expr>, String>
     {
         it.expect_assert(&Token::left_parenthesis());
         
@@ -157,7 +157,7 @@ impl Parser
                 _ => (),
             }
             
-            let expr = try!(self.parse_expression(&mut it));
+            let expr = try!(self.parse_expression(it));
             expressions.push(expr);
         }
         
