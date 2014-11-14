@@ -237,7 +237,7 @@ impl<I: Iterator<char>> Tokenizer<I>
                 }
             }
         };
-        
+
         self.stack.push(val.clone());
         Some(val)
     }
@@ -604,7 +604,7 @@ impl<U: Iterator<char>> IteratorPeeker<char, U>
                         break;
                     }
                 },
-                None => ()
+                None => break,
             }
         }
     }
