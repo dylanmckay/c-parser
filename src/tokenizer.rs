@@ -69,6 +69,30 @@ impl<I: Iterator<char>> Tokenizer<I>
         self.stack.push(val.clone());
         Some(val)
     }
+    
+    /// Peeks at the n'th character from the current index.
+    pub fn peek_n(&mut self, n: uint) -> Option<Token>
+    {
+        let mut read_elems = Vec::new();
+        
+        for _ in range(0,n+1) {
+        
+            match self.next() {
+                Some(e) => {
+                    read_elems.push(e);
+                },
+                None => {
+                    break;
+                },
+            }
+        }
+
+        for read_char in read_elems.iter().rev() {
+            self.stack.push(read_char.clone());
+        }
+        
+        read_elems.last().map(|a| a.clone())
+    }
 
     fn read_identifier(&mut self) -> Option<Token>
     {
