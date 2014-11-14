@@ -6,10 +6,10 @@ pub mod tokenizer;
 
 fn main()
 {
-    let text = "#define _SFR_IO8(addr) addr";
+    let text = "+=+=+=+=##[]()-=";//"#define _SFR_IO8(addr) addr";
     
-    //test_tokenizer(text);
-    test_parser(text);
+    test_tokenizer(text);
+    //test_parser(text);
     
 }
 

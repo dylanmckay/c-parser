@@ -29,8 +29,8 @@ impl<I: Iterator<char>> Tokenizer<I>
     pub fn new(it: I) -> Tokenizer<I>
     {
         let mut symbol_tokens = vec![
-            ";",
-            "(", ")",
+            ";", "#", ":", 
+            "(", ")", "[", "]",
             
             // arithmetic operators.
             "+", "-", "*", "/",
@@ -40,9 +40,8 @@ impl<I: Iterator<char>> Tokenizer<I>
         ];
         
         // sort the symbol tokens by length, so that the longer symbols are at the beginning.
+        // this way our symbol finding code works (we check += before +).
         symbol_tokens.sort_by(|&e1,&e2| e2.len().cmp(&e1.len()));
-        
-        println!("{}", symbol_tokens);
         
         Tokenizer {
             it: IteratorPeeker::new(it),
@@ -97,28 +96,29 @@ impl<I: Iterator<char>> Tokenizer<I>
     
     fn read_possible_symbol(&mut self) -> Option<Token>
     {
-        match self.it.next() {
-            Some(c) => {
-                let mut read_chars = String::from_char(1, c);
+        'symbol_loop: for sym in self.symbol_tokens.iter() {
+            for (index,symbol_char) in sym.chars().enumerate() {
                 
-                for sym in self.symbol_tokens.iter() {
-                    for (index,symbol_char) in sym.chars().enumerate() {
-                        
-                    }
+                let peeked_char = match self.it.peek_n(index) {
+                    Some(c) => c,
+                    None => { continue 'symbol_loop; },
+                };
+                
+                // check the character againsts the symbol.
+                if peeked_char != symbol_char {
+                    continue 'symbol_loop;
                 }
-            },
-            None => unreachable!(),
-        };
+            }
+            
+            // eat the symbol characters.
+            self.it.eat(sym.len());
+            
+            // we have found a symbol match.
+            return Some(TokenSymbol(sym.to_string()));
+        }
         
+        // no matches.
         None
-        /*
-        match self.it.next() {
-            Some(c) => match c {
-                '#' => Some(TokenSymbol("#".to_string())),
-                t => panic!(format!("unknown token: '{}'", t)),
-            },
-            None => None
-        }*/
     }
     
     pub fn expect_assert(&mut self, tok: &Token)
@@ -231,7 +231,7 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
     }
     
     /// Peeks at the n'th character from the current index.
-    pub fn peek_n(&mut self, n: u32) -> Option<T>
+    pub fn peek_n(&mut self, n: uint) -> Option<T>
     {
         let mut read_elems = Vec::new();
         
@@ -252,6 +252,16 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
         }
         
         read_elems.last().map(|a| a.clone())
+    }
+    
+    pub fn eat(&mut self, n: uint)
+    {
+        for i in range(0, n) {
+            match self.next() {
+                Some(..) => (),
+                None => { break }, // we reached the end, might as well stop.
+            }
+        }
     }
     
 }
