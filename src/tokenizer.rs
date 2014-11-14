@@ -235,7 +235,7 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
     {
         let mut read_elems = Vec::new();
         
-        for i in range(0,n+1) {
+        for _ in range(0,n+1) {
         
             match self.next() {
                 Some(e) => {
@@ -256,7 +256,7 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
     
     pub fn eat(&mut self, n: uint)
     {
-        for i in range(0, n) {
+        for _ in range(0, n) {
             match self.next() {
                 Some(..) => (),
                 None => { break }, // we reached the end, might as well stop.

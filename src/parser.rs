@@ -1,8 +1,7 @@
 
 use ast;
-use std;
 
-use tokenizer::{Tokenizer,Token,TokenSymbol,TokenWord,TokenNewLine};
+use tokenizer::{Tokenizer,TokenSymbol,TokenWord,TokenNewLine};
 use ast::Expression;
 
 pub struct Parser
@@ -72,7 +71,6 @@ impl Parser
     fn parse_preprocessor_function<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>) -> Result<(), String>
     {
         unimplemented!();
-        Ok(())
     }
     
     fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, mut it: Tokenizer<I>, name: String) -> Result<(), String>
@@ -82,7 +80,7 @@ impl Parser
             Some(TokenNewLine) | None => {
                 None
             },
-            Some(t) => {
+            Some(..) => {
                 Some(try!(self.parse_expression(it)))
             },
         };

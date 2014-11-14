@@ -12,6 +12,7 @@ fn main()
     test_parser(text);
 }
 
+#[allow(dead_code)]
 fn test_tokenizer(text: &'static str)
 {
     let mut tk = tokenizer::Tokenizer::new(text.chars());
@@ -21,12 +22,16 @@ fn test_tokenizer(text: &'static str)
     }
 }
 
+#[allow(dead_code)]
 fn test_parser(text: &'static str)
 {
     let tk = tokenizer::Tokenizer::new(text.chars());
     let mut parser = parser::Parser::new();
     
-    parser.parse(tk);
+    match parser.parse(tk) {
+        Ok(..) => { println!("parse success!"); },
+        Err(msg) => { println!("parsing failed: {}", msg); },
+    }
     
     println!("{}", parser.ast);
 }
