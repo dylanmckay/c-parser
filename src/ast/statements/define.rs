@@ -8,7 +8,10 @@ use ast::preprocessor;
 #[deriving(Show)]
 pub enum Define
 {
+    /// A statement defining a preprocessor function.
     DefineFunction(preprocessor::Function),
+    
+    /// A statement defining a preprocessor constant.
     DefineConstant(preprocessor::Constant),
 }
 

@@ -11,21 +11,25 @@ pub mod preprocessor;
 /// A statement.
 pub trait Statement : std::fmt::Show
 {
+    /// Converts the statement into a more abstract Stmt.
     fn to_stmt(self) -> Stmt;
 }
 
+/// Abstracts over a Statement.
 #[deriving(Show)]
 pub enum Stmt
 {
     StmtDefine(statements::Define),
 }
 
+/// An expression.
 pub trait Expression : std::fmt::Show
 {
+    /// Converts the expression into a more abstract Expr.
     fn to_expr(self) -> Expr;
 }
 
-/// An expression.
+/// Abstracts over an Expression.
 #[deriving(Show)]
 pub enum Expr
 {
@@ -37,7 +41,7 @@ pub enum Expr
     ExprTmp,
 }
 
-/// An abstract syntax tree.
+/// An [abstract syntax tree](http://en.wikipedia.org/wiki/Abstract_syntax_tree).
 #[deriving(Show)]
 pub struct Ast
 {

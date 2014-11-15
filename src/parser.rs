@@ -5,6 +5,7 @@ use token;
 use token::{Tokenizer,Token};
 use ast::{Expr,ExprIdentifier,Expression};
 
+/// A parser can read C code and encode it into an AST.
 pub struct Parser
 {
     pub ast: ast::Ast,
@@ -12,6 +13,7 @@ pub struct Parser
 
 impl Parser
 {
+    /// Creates a new parser.
     pub fn new() -> Parser
     {
         Parser {
@@ -55,6 +57,7 @@ impl Parser
         }
     }
     
+    /// Parses a preprocessor `#define` statement.
     fn parse_preprocessor_define<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
         it.expect_assert(&Token::define());
@@ -94,6 +97,12 @@ impl Parser
         }
     }
     
+    /// Parses a preprocessor #define function.
+    /// Examples:
+    /// ``` c
+    /// #define ABC(b) b
+    /// #define _SFR_IO8(addr)
+    /// ```
     fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
     {
         let parameter_list = try!(self.parse_preprocessor_function_parameters(it));
@@ -132,6 +141,12 @@ impl Parser
         }
     }
     
+    /// Parses a preprocessor that is not a function, examples:
+    /// ``` c
+    /// #define ABC
+    /// #define foo bar
+    /// #define asdf 1
+    /// ```
     fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
     {
         let expression = try!(self.parse_preprocessor_expression(it));
@@ -160,6 +175,7 @@ impl Parser
         }
     }
     
+    /// Parses an expression.
     fn parse_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
     {
         match it.next()
@@ -205,7 +221,7 @@ impl Parser
     
 }
 
-/// Unwraps an `Option<Token>`, giving either Ok(Token) or Err(msg).
+/// Unwraps an `Option<Result<Token,String>>`, giving either Ok(Token) or Err(msg).
 fn expect_token(opt: Option<Result<Token,String>>) -> Result<Token,String>
 {
     match opt {

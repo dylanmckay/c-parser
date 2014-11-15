@@ -524,7 +524,7 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
     }
 }
 
-/// An iterator which can peek.
+/// An iterator which supports peeking.
 pub struct IteratorPeeker<T, U: Iterator<T>>
 {
     it: U,

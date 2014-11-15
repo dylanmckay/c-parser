@@ -2,7 +2,9 @@
 use ast::Expr;
 use ast::expressions::Identifier;
 
-/// A #define func(a,b,c)
+/// A preprocessor function. For example:
+/// `#define _SFR_IO8(addr) (addr+12)`
+/// `#define do_nothing(a)`
 #[deriving(Show)]
 pub struct Function
 {
