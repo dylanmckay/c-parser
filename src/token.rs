@@ -188,8 +188,9 @@ impl std::fmt::Show for Token
 /// A tokenizer.
 pub struct Tokenizer<I: Iterator<char>>
 {
-    pub it: IteratorPeeker<char, I>,
+    it: IteratorPeeker<char, I>,
     stack: Vec<Token>,
+    finished: bool,
     
     // the possible symbols.
     symbol_tokens: Vec<&'static str>,
@@ -218,6 +219,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         Tokenizer {
             it: IteratorPeeker::new(it),
             stack: Vec::new(),
+            finished: false,
             
             symbol_tokens: symbol_tokens,
         }
@@ -465,8 +467,14 @@ impl<I: Iterator<char>> Tokenizer<I>
 
 impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
 {
+    /// Gets the next token.
+    /// The last token retrived by this function will always be a new line.
     fn next(&mut self) -> Option<Result<Token,String>>
     {
+        if self.finished {
+            return None;
+        }
+        
         // if we have peeked data on the stack, retrieve it.
         match self.stack.pop() {
             Some(tok) => { return Some(Ok(tok)); },
@@ -479,7 +487,11 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
             Some(first_char) => first_char,
             
             // we reached the EOF.
-            None => { return None; }
+            None => {
+                self.finished = true;
+                
+                return Some(Ok(Token::new_line()));
+            }
         };
         
         if first_char == '\n' {

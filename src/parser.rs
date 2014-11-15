@@ -64,7 +64,7 @@ impl Parser
                     None => { return Err("invalid identifier".to_string()); }
                 };
                 
-                match it.peek() {
+                let result = match it.peek() {
                     // check if it is a function.
                     Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "(" => {
                         self.parse_preprocessor_function(it, name)
@@ -74,7 +74,15 @@ impl Parser
                     Some(..) | None => {
                         self.parse_preprocessor_constant(it, name)
                     },
-                }
+                };
+                
+                // if parsing failed, return the error.
+                try!(result);
+                
+                // a new line should always proceed a #define.
+                try!(it.expect(&Token::new_line()));
+                
+                return result;
                 
             },
             Some(Err(err)) => { return Err(err); },
@@ -92,8 +100,6 @@ impl Parser
             params: parameter_list,
             expr: expression,
         })));
-        
-        println!("finished!");
         
         Ok(())
     }
