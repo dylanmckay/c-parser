@@ -471,15 +471,20 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
     /// The last token retrived by this function will always be a new line.
     fn next(&mut self) -> Option<Result<Token,String>>
     {
-        if self.finished {
-            return None;
-        }
+        
         
         // if we have peeked data on the stack, retrieve it.
         match self.stack.pop() {
             Some(tok) => { return Some(Ok(tok)); },
             None => (),
         };
+        
+        // note that this must be below 'match self.stack.pop()' because
+        // self.peek() calls this function and then pushes result. if this
+        // is above aforementioned block, self.peek() == Some(NewLine) & self.next() == None
+        if self.finished {
+            return None;
+        }
         
         self.it.eat_whitespace_but_line();
         
