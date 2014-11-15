@@ -24,12 +24,13 @@ impl Parser
     {
         loop {
             match it.peek() {
-                Some(tok) => match tok {
+                Some(Ok(tok)) => match tok {
                     Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
                         try!(self.parse_preprocessor(&mut it))
                     },
                     _ => { return Err(format!("unknown token: {}", tok)); } // we don't know how to handle this token.
                 },
+                Some(Err(err)) => { return Err(err); },
                 None => { return Ok(()); }, // we reached the end.
             }
         }
@@ -42,9 +43,10 @@ impl Parser
         it.expect_assert(&Token::hash());
         
         match it.peek() {
-            Some(Token(token::KindWord, ref word)) if word.as_slice() == "define" => {
+            Some(Ok(Token(token::KindWord, ref word))) if word.as_slice() == "define" => {
                 self.parse_preprocessor_define(it)
             },
+            Some(Err(err)) => { return Err(err); },
             a => { Err(format!("unknown thingy: '{}'", a).to_string()) },
         }
     }
@@ -54,7 +56,7 @@ impl Parser
         it.expect_assert(&Token::define());
         
         match it.peek() {
-            Some(Token(token::KindWord, name_str)) => {
+            Some(Ok(Token(token::KindWord, name_str))) => {
                 it.next(); // eat name.
                 
                 let name = match ast::expressions::Identifier::from_name(name_str) {
@@ -64,9 +66,10 @@ impl Parser
                 
                 match it.peek() {
                     // check if it is a function.
-                    Some(Token(token::KindSymbol, ref sym)) if sym.as_slice() == "(" => {
+                    Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "(" => {
                         self.parse_preprocessor_function(it, name)
                     },
+                    Some(Err(err)) => { return Err(err); },
                     // it is a constant
                     Some(..) | None => {
                         self.parse_preprocessor_constant(it, name)
@@ -74,6 +77,7 @@ impl Parser
                 }
                 
             },
+            Some(Err(err)) => { return Err(err); },
             _ => Err("expected identifier".to_string())
         }
     }
@@ -136,10 +140,11 @@ impl Parser
     {
         match it.peek() {
             // there is no following expression.
-            Some(Token(token::KindNewLine,_)) | None => {
+            Some(Ok(Token(token::KindNewLine,_))) | None => {
                 it.eat();
                 Ok(None)
             },
+            Some(Err(err)) => { return Err(err); },
             Some(..) => {
                 Ok(Some(try!(self.parse_expression(it))))
             },
@@ -150,7 +155,8 @@ impl Parser
     {
         match it.next()
         {
-            Some(Token(token::KindWord,word)) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
+            Some(Ok(Token(token::KindWord,word))) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
+            Some(Err(err)) => { return Err(err); },
             Some(..) | None => unimplemented!()
         }
     }
@@ -167,11 +173,12 @@ impl Parser
         loop {
             
             match it.peek() {
-                Some(ref token) if token == &Token::right_parenthesis() => {
+                Some(Ok(ref token)) if token == &Token::right_parenthesis() => {
                     break;
                 },
                 // eat comma, we explicitly check for it the previous iteration.
-                Some(ref token) if token == &Token::comma() => it.eat(),
+                Some(Ok(ref token)) if token == &Token::comma() => it.eat(),
+                Some(Err(err)) => { return Err(err); },
                 _ => (),
             }
             
@@ -190,10 +197,10 @@ impl Parser
 }
 
 /// Unwraps an `Option<Token>`, giving either Ok(Token) or Err(msg).
-fn expect_token(opt: Option<Token>) -> Result<Token,String>
+fn expect_token(opt: Option<Result<Token,String>>) -> Result<Token,String>
 {
     match opt {
-        Some(tok) => Ok(tok),
+        Some(res) => res,
         None => Err("expected a token".to_string()),
     }
 }

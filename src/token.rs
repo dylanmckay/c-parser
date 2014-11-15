@@ -224,14 +224,17 @@ impl<I: Iterator<char>> Tokenizer<I>
     }
     
     /// Peeks at the next token.
-    pub fn peek(&mut self) -> Option<Token>
+    pub fn peek(&mut self) -> Option<Result<Token,String>>
     {
-        let val = match self.stack.pop() {
+        let val: Token = match self.stack.pop() {
             Some(val) => val.clone(),
             None => {
                 match self.next() {
                     Some(val) => {
-                        val
+                        match val {
+                            Ok(a) => a,
+                            err => { return Some(err); }
+                        }
                     },
                     None => { return None; },
                 }
@@ -239,7 +242,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         };
 
         self.stack.push(val.clone());
-        Some(val)
+        Some(Ok(val))
     }
     
     /// Eats the next token, disregarding it.
@@ -249,7 +252,7 @@ impl<I: Iterator<char>> Tokenizer<I>
     }
     
     /// Peeks at the n'th token from the current index.
-    pub fn peek_n(&mut self, n: uint) -> Option<Token>
+    pub fn peek_n(&mut self, n: uint) -> Option<Result<Token,String>>
     {
         let mut read_elems = Vec::new();
         
@@ -257,7 +260,10 @@ impl<I: Iterator<char>> Tokenizer<I>
         
             match self.next() {
                 Some(e) => {
-                    read_elems.push(e);
+                    match e {
+                        Ok(tok) => read_elems.push(tok),
+                        err => { return Some(err); }
+                    }
                 },
                 None => {
                     break;
@@ -268,11 +274,14 @@ impl<I: Iterator<char>> Tokenizer<I>
         for read_char in read_elems.iter().rev() {
             self.stack.push(read_char.clone());
         }
-        
-        read_elems.last().map(|a| a.clone())
+
+        match read_elems.last() {
+            Some(a) => Some(Ok(a.clone())),
+            None => None
+        }
     }
 
-    fn read_identifier(&mut self) -> Option<Token>
+    fn parse_identifier(&mut self) -> Result<Token,String>
     {
         let mut chars = vec![ self.it.next().unwrap() ];
         
@@ -293,10 +302,10 @@ impl<I: Iterator<char>> Tokenizer<I>
             }
         }
 
-        Some(Token(KindWord, String::from_chars(chars.as_slice())))
+        Ok(Token(KindWord, String::from_chars(chars.as_slice())))
     }
     
-    fn read_possible_symbol(&mut self) -> Option<Token>
+    fn parse_possible_symbol(&mut self) -> Result<Token,String>
     {
         'symbol_loop: for sym in self.symbol_tokens.iter() {
             for (index,symbol_char) in sym.chars().enumerate() {
@@ -313,14 +322,14 @@ impl<I: Iterator<char>> Tokenizer<I>
             }
             
             // eat the symbol characters.
-            self.it.eat(sym.len());
+            self.it.eat_several(sym.len());
             
             // we have found a symbol match.
-            return Some(Token(KindSymbol, sym.to_string()));
+            return Ok(Token(KindSymbol, sym.to_string()));
         }
         
         // no matches.
-        None
+        Err("unknown token".to_string())
     }
     
     /// Checks if the next token is the specified token.
@@ -339,11 +348,12 @@ impl<I: Iterator<char>> Tokenizer<I>
     pub fn internal_expect(&mut self, expected: &Token, on_fail: ||) -> Result<Token,String>
     {
         match self.next() {
-            Some(token) => {
+            Some(Ok(token)) => {
                 if &token == expected {
                     return Ok(token);
                 }
             },
+            Some(err) => { return err; },
             _ => ()
         }
         
@@ -369,7 +379,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         let mut kind_list = Vec::new();
         
         match self.next() {
-            Some(token) => match token {
+            Some(Ok(token)) => match token {
                 Token(read_kind, _) => {
                 
                     // iterate through the expected kinds and check.
@@ -383,6 +393,7 @@ impl<I: Iterator<char>> Tokenizer<I>
                     }
                 }
             },
+            Some(err) => { return err; },
             None => ()
         }
         
@@ -404,9 +415,10 @@ impl<I: Iterator<char>> Tokenizer<I>
     pub fn internal_expect_kind(&mut self, kind: TokenKind, on_fail: ||) -> Result<Token,String>
     {
         match self.next() {
-            Some(token) => if token.is(kind) {
+            Some(Ok(token)) => if token.is(kind) {
                 return Ok(token);
             },
+            Some(err) => { return err; }
             _ => ()
         }
         
@@ -432,7 +444,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         let mut token_list = Vec::new();
         
         match self.next() {
-            Some(next_tok) => {
+            Some(Ok(next_tok)) => {
                 token_list.push(next_tok.clone());
                 
                 match tokens.find(|a| a == &next_tok) {
@@ -442,6 +454,7 @@ impl<I: Iterator<char>> Tokenizer<I>
                     None => (),
                 }
             },
+            Some(err) => { return err; },
             None => (),
         }
         
@@ -450,12 +463,13 @@ impl<I: Iterator<char>> Tokenizer<I>
     }
 }
 
-impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
+impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
 {
-    fn next(&mut self) -> Option<Token>
+    fn next(&mut self) -> Option<Result<Token,String>>
     {
+        // if we have peeked data on the stack, retrieve it.
         match self.stack.pop() {
-            Some(tok) => { return Some(tok); },
+            Some(tok) => { return Some(Ok(tok)); },
             None => (),
         };
         
@@ -463,28 +477,32 @@ impl<I: Iterator<char>> Iterator<Token> for Tokenizer<I>
         
         let first_char = match self.it.peek() {
             Some(first_char) => first_char,
-            None => panic!("unexpected end of file"),
+            
+            // we reached the EOF.
+            None => { return None; }
         };
         
         if first_char == '\n' {
-            self.it.next();
-            return Some(Token::new_line());
+            self.it.eat();
+            return Some(Ok(Token::new_line()));
+            
         } else if first_char == '\r' {
+        
             match self.it.peek_n(1) {
                 Some('\n') => {
                     self.it.next(); // skip '\r'.
                     self.it.next(); // skip '\n'.
                     
-                    return Some(Token::new_line());
+                    return Some(Ok(Token::new_line()));
                 },
                 Some(..) | None => ()
             }
         }
         
         if ast::expressions::identifier::is_valid_first_char(first_char) {
-            self.read_identifier()
+            Some(self.parse_identifier())
         } else {
-            self.read_possible_symbol()
+            Some(self.parse_possible_symbol())
         }
     }
 }
@@ -548,7 +566,12 @@ impl<T: Clone, U: Iterator<T>> IteratorPeeker<T, U>
         read_elems.last().map(|a| a.clone())
     }
     
-    pub fn eat(&mut self, n: uint)
+    pub fn eat(&mut self)
+    {
+        self.next();
+    }
+    
+    pub fn eat_several(&mut self, n: uint)
     {
         for _ in range(0, n) {
             match self.next() {
