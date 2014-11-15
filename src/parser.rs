@@ -28,6 +28,10 @@ impl Parser
                     Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
                         try!(self.parse_preprocessor(&mut it))
                     },
+                    Token(token::KindNewLine,_) => {
+                    
+                        continue;
+                    },
                     _ => { return Err(format!("unknown token: {}", tok)); } // we don't know how to handle this token.
                 },
                 Some(Err(err)) => { return Err(err); },
@@ -47,7 +51,7 @@ impl Parser
                 self.parse_preprocessor_define(it)
             },
             Some(Err(err)) => { return Err(err); },
-            a => { Err(format!("unknown thingy: '{}'", a).to_string()) },
+            a => { Err(format!("unknown directive: '{}'", a).to_string()) },
         }
     }
     
