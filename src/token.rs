@@ -54,6 +54,9 @@ impl Token
     pub fn comma() -> Token { Token(KindSymbol, ",".to_string()) }
     pub fn semicolon() -> Token { Token(KindSymbol, ";".to_string()) }
     pub fn forward_slash() -> Token { Token(KindSymbol, "/".to_string()) }
+    pub fn forward_slash_asterix() -> Token { Token(KindSymbol, "/*".to_string()) }
+    pub fn asterix_forward_slash() -> Token { Token(KindSymbol, "*/".to_string()) }
+    pub fn forward_slash_slash() -> Token { Token(KindSymbol, "//".to_string()) }
     pub fn asterix() -> Token { Token(KindSymbol, "*".to_string()) }
     
     // Keywords.
@@ -98,6 +101,9 @@ impl<I: Iterator<char>> Tokenizer<I>
             ";", "#", ":", ",",
             "(", ")", "[", "]",
             "/", "*", "&",
+            
+            // comment tokens.
+            "/*", "*/", "//",
             
             // arithmetic operators.
             "+", "-", "*", "/",

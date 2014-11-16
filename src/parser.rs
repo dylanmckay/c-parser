@@ -30,11 +30,14 @@ impl Parser
                     Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
                         try!(self.parse_preprocessor(&mut it))
                     },
-                    Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "/" => {
-                        try!(self.parse_comment(&mut it))
+                    Token(token::KindSymbol, ref symbol) if (symbol.as_slice() == "//") => {
+                        try!(self.parse_line_comment(&mut it))
+                    },
+                    Token(token::KindSymbol, ref symbol) if (symbol.as_slice() == "/*") => {
+                        try!(self.parse_block_comment(&mut it))
                     },
                     Token(token::KindNewLine,_) => {
-                    
+                        it.eat();
                         continue;
                     },
                     _ => { return Err(format!("unknown token: {}", tok)); } // we don't know how to handle this token.
@@ -178,27 +181,43 @@ impl Parser
         }
     }
     
-    pub fn parse_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    fn parse_block_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
-        // this isn't right, is it?!?!
-        expect::assert_token(it.next(), &Token::asterix());
+        expect::assert_token(it.next(), &Token::forward_slash_asterix());
         
-        match it.peek() {
-            Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "*" => self.parse_block_comment(it),
-            Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "/" => self.parse_line_comment(it),
-            Some(Err(err)) => { return Err(err); },
-            _ => panic!("in the middle of fixing"),
+        let body = try!(self.parse_comment_body(it, &Token::asterix_forward_slash()));
+        
+        self.ast.nodes.push(ast::StmtComment(ast::statements::Comment(ast::statements::comment::KindBlock, body)));
+        
+        Ok(())
+    }
+    
+    fn parse_line_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    {
+        expect::assert_token(it.next(), &Token::forward_slash_slash());
+        
+        let body = try!(self.parse_comment_body(it, &Token::new_line()));
+        
+        self.ast.nodes.push(ast::StmtComment(ast::statements::Comment(ast::statements::comment::KindLine, body)));
+        
+        Ok(())
+    }
+    
+    /// Parses the text from a comment.
+    /// Stops when `terminator` is reached.
+    /// NOTE: This does not properly handle nested comments, i.e. `/* /* */`, or even the properly terminated `/* /* */ */`.
+    /// TODO: This function ignores the body and returns an empty string; fix this/
+    fn parse_comment_body<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, terminator: &Token) -> Result<String, String>
+    {
+        loop {
+            let token = try!(expect::something(it.next()));
+            
+            if &token == terminator {
+                break;
+            }
         }
-    }
-    
-    pub fn parse_block_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
-    {
-        unimplemented!();
-    }
-    
-    pub fn parse_line_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
-    {
-        unimplemented!();
+        
+        Ok("".to_string())
     }
     
     /// Parses an expression.
@@ -252,6 +271,21 @@ mod expect
 {
     use token::{Token,TokenKind};
     use util;
+    
+    /// Checks that there is a token.
+    pub fn something(opt: Option<Result<Token,String>>) -> Result<Token,String>
+    {
+        match opt {
+            Some(thing) => thing,
+            None => Err("expected a token".to_string()),
+        }
+    }
+    
+    /// Asserts that there is a token.
+    pub fn assert_something(opt: Option<Result<Token,String>>) -> Token
+    {
+        self::assert_result(self::something(opt))
+    }
 
     pub fn token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Result<Token,String>
     {
