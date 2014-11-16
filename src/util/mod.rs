@@ -1,5 +1,10 @@
 
+
+pub use self::iteratorpeeker::IteratorPeeker;
+
 use std;
+
+pub mod iteratorpeeker;
 
 
 /// Builds a comma seperated list of objects as a string.
