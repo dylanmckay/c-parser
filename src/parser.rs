@@ -235,8 +235,7 @@ impl Parser
             let expr = try!(self.parse_expression(it));
             expressions.push(expr);
 
-            let peeked_token = try!(self::expect_token(it.peek()));
-            try!(peeked_token.expect_one_of([Token::comma(), Token::right_parenthesis()].iter()));
+            try!(expect::one_of(it.peek(), [Token::comma(), Token::right_parenthesis()].iter()));
         }
         
         it.expect_assert(&Token::right_parenthesis());
@@ -244,15 +243,6 @@ impl Parser
         Ok(expressions)
     }
     
-}
-
-/// Unwraps an `Option<Result<Token,String>>`, giving either Ok(Token) or Err(msg).
-fn expect_token(opt: Option<Result<Token,String>>) -> Result<Token,String>
-{
-    match opt {
-        Some(res) => res,
-        None => Err("expected a token".to_string()),
-    }
 }
 
 /// A collection of internal methods for token checking.
