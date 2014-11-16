@@ -52,6 +52,8 @@ impl Token
     pub fn hash() -> Token { Token(KindSymbol, "#".to_string()) }
     pub fn comma() -> Token { Token(KindSymbol, ",".to_string()) }
     pub fn semicolon() -> Token { Token(KindSymbol, ";".to_string()) }
+    pub fn forward_slash() -> Token { Token(KindSymbol, "/".to_string()) }
+    pub fn asterix() -> Token { Token(KindSymbol, "*".to_string()) }
     
     // Keywords.
     pub fn define() -> Token { Token(KindWord, "define".to_string()) }
@@ -204,12 +206,17 @@ impl<I: Iterator<char>> Tokenizer<I>
         let mut symbol_tokens = vec![
             ";", "#", ":", ",",
             "(", ")", "[", "]",
+            "/", "*", "&",
             
             // arithmetic operators.
             "+", "-", "*", "/",
             
             // arithmetic assignment operators.
-            "+=", "-=", "*=", "/="
+            "+=", "-=", "*=", "/=",
+            
+            // comparison operators.
+            "<", "<=", ">", ">=",
+            
         ];
         
         // sort the symbol tokens by length, so that the longer symbols are at the beginning.

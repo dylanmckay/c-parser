@@ -30,6 +30,9 @@ impl Parser
                     Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
                         try!(self.parse_preprocessor(&mut it))
                     },
+                    Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "/" => {
+                        try!(self.parse_comment(&mut it))
+                    },
                     Token(token::KindNewLine,_) => {
                     
                         continue;
@@ -175,6 +178,28 @@ impl Parser
         }
     }
     
+    pub fn parse_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    {
+        it.expect_assert(&Token::asterix());
+        
+        match it.peek() {
+            Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "*" => self.parse_block_comment(it),
+            Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "/" => self.parse_line_comment(it),
+            Some(Err(err)) => { return Err(err); },
+            _ => panic!("in the middle of fixing"),
+        }
+    }
+    
+    pub fn parse_block_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    {
+        unimplemented!();
+    }
+    
+    pub fn parse_line_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    {
+        unimplemented!();
+    }
+    
     /// Parses an expression.
     fn parse_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
     {
@@ -228,5 +253,138 @@ fn expect_token(opt: Option<Result<Token,String>>) -> Result<Token,String>
         Some(res) => res,
         None => Err("expected a token".to_string()),
     }
+}
+
+/// A collection of internal methods for token checking.
+#[allow(dead_code)]
+mod expect
+{
+    use token::{Token,TokenKind};
+    use util;
+
+    pub fn token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Result<Token,String>
+    {
+        match opt {
+            Some(Ok(read_token)) => {
+                if &read_token == expected_token {
+                    return Ok(read_token);
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected {}", expected_token);
+        Err(msg)
+    }
+    
+    pub fn assert_token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Token
+    {
+        self::assert_result(self::token(opt, expected_token))
+    }
+    
+    pub fn kind(opt: Option<Result<Token,String>>, expected_kind: TokenKind) -> Result<Token,String>
+    {
+        match opt {
+            Some(Ok(read_token)) => {
+                if read_token.is(expected_kind) {
+                    return Ok(read_token);
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected {}", expected_kind);
+        Err(msg)
+    }
+    
+    pub fn assert_kind(opt: Option<Result<Token,String>>, expected_kind: TokenKind) -> Token
+    {
+        self::assert_result(self::kind(opt, expected_kind))
+    }
+    
+    pub fn kinds<I: Iterator<TokenKind>>(opt: Option<Result<Token,String>>, mut expected_kinds: I) -> Result<Token,String>
+    {
+        // a list of kinds collected from the expected kind iterator.
+        // if the token is not matched, this list will contain all expected kinds.
+        let mut kind_list = Vec::new();
+        
+        match opt {
+            Some(Ok(read_token)) => {
+                for expected_kind in expected_kinds {
+                
+                    kind_list.push(expected_kind.clone());
+                    
+                    if read_token.is(expected_kind) {
+                        return Ok(read_token);
+                    }
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected one of: {}", kind_list);
+        Err(msg)
+    }
+    
+    pub fn assert_kinds<I: Iterator<TokenKind>>(opt: Option<Result<Token,String>>, expected_kinds: I) -> Token
+    {
+        self::assert_result(self::kinds(opt, expected_kinds))
+    }
+    
+    /// Checks that the next token is one of a set of tokens.
+    pub fn one_of<'a, I: Iterator<&'a Token>>(opt: Option<Result<Token,String>>, mut expected_tokens: I) -> Result<Token,String>
+    {
+        // a list of tokens collected from the expected token iterator.
+        // if the token is not matched, this list will contain all expected tokens.
+        let mut token_list = Vec::new();
+        
+        match opt {
+            Some(Ok(read_token)) => {
+                
+                for possible_token in expected_tokens {
+                    token_list.push(possible_token.clone());
+                    
+                    if &read_token == possible_token {
+                        return Ok(read_token);
+                    }
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        };
+        
+        let msg = format!("expected one of: {}", util::build_list_str(token_list.iter()));
+        Err(msg)
+    }
+    
+    /// Asserts that the next token is one of a set of tokens.
+    pub fn assert_one_of<'a, I: Iterator<&'a Token>>(opt: Option<Result<Token,String>>, expected_tokens: I) -> Token
+    {
+        match self::one_of(opt, expected_tokens) {
+            Ok(token) => token,
+            Err(err) => panic!(err),
+        }
+    }
+    
+    /// Helper method for unwrapping an expect result.
+    fn assert_result(opt: Result<Token,String>) -> Token
+    {
+        match opt {
+            Ok(token) => token,
+            Err(err) => panic!(err),
+        }
+    }
+        
 }
 

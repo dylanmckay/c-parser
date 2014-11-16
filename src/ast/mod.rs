@@ -20,6 +20,7 @@ pub trait Statement : std::fmt::Show
 pub enum Stmt
 {
     StmtDefine(statements::Define),
+    StmtComment(statements::Comment),
 }
 
 /// An expression.
