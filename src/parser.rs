@@ -49,7 +49,7 @@ impl Parser
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
     fn parse_preprocessor<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token::hash());
+        expect::assert_token(it.next(), &Token::hash());
         
         match it.peek() {
             Some(Ok(Token(token::KindWord, ref word))) if word.as_slice() == "define" => {
@@ -63,7 +63,7 @@ impl Parser
     /// Parses a preprocessor `#define` statement.
     fn parse_preprocessor_define<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token::define());
+        expect::assert_token(it.next(), &Token::define());
         
         match it.peek() {
             Some(Ok(Token(token::KindWord, name_str))) => {
@@ -90,7 +90,7 @@ impl Parser
                 try!(result);
                 
                 // a new line should always proceed a #define.
-                try!(it.expect(&Token::new_line()));
+                try!(expect::token(it.next(), &Token::new_line()));
                 
                 return result;
                 
@@ -180,7 +180,8 @@ impl Parser
     
     pub fn parse_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {
-        it.expect_assert(&Token::asterix());
+        // this isn't right, is it?!?!
+        expect::assert_token(it.next(), &Token::asterix());
         
         match it.peek() {
             Some(Ok(Token(token::KindSymbol, ref sym))) if sym.as_slice() == "*" => self.parse_block_comment(it),
@@ -216,7 +217,7 @@ impl Parser
     /// For example: "(abc, 123, bvs)".
     fn parse_argument_list<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Vec<ast::Expr>, String>
     {
-        it.expect_assert(&Token::left_parenthesis());
+        expect::assert_token(it.next(), &Token::left_parenthesis());
         
         let mut expressions = Vec::new();
         
@@ -238,7 +239,7 @@ impl Parser
             try!(expect::one_of(it.peek(), [Token::comma(), Token::right_parenthesis()].iter()));
         }
         
-        it.expect_assert(&Token::right_parenthesis());
+        expect::assert_token(it.next(), &Token::right_parenthesis());
         
         Ok(expressions)
     }

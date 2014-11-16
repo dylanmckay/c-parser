@@ -7,7 +7,7 @@ pub mod util;
 
 fn main()
 {
-    let text = "/* a comment */";
+    let text = "#define _SFR_IO8(addr) addr";
     
     //test_tokenizer(text);
     test_parser(text);
