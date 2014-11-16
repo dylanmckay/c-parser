@@ -286,7 +286,8 @@ mod expect
     {
         self::assert_result(self::something(opt))
     }
-
+    
+    /// Checks that a token is equal to a given token.
     pub fn token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Result<Token,String>
     {
         match opt {
@@ -305,11 +306,13 @@ mod expect
         Err(msg)
     }
     
+    /// Asserts that a token is equal to a given token.
     pub fn assert_token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Token
     {
         self::assert_result(self::token(opt, expected_token))
     }
     
+    /// Checks that a token is of a given kind.
     pub fn kind(opt: Option<Result<Token,String>>, expected_kind: TokenKind) -> Result<Token,String>
     {
         match opt {
@@ -328,11 +331,13 @@ mod expect
         Err(msg)
     }
     
+    /// Checks that a token is of a given kind.
     pub fn assert_kind(opt: Option<Result<Token,String>>, expected_kind: TokenKind) -> Token
     {
         self::assert_result(self::kind(opt, expected_kind))
     }
     
+    /// Checks that a token is an element of a set of kinds.
     pub fn kinds<I: Iterator<TokenKind>>(opt: Option<Result<Token,String>>, mut expected_kinds: I) -> Result<Token,String>
     {
         // a list of kinds collected from the expected kind iterator.
@@ -360,6 +365,7 @@ mod expect
         Err(msg)
     }
     
+    /// Asserts that a token is an element of a set of kinds.
     pub fn assert_kinds<I: Iterator<TokenKind>>(opt: Option<Result<Token,String>>, expected_kinds: I) -> Token
     {
         self::assert_result(self::kinds(opt, expected_kinds))
