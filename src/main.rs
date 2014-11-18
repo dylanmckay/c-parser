@@ -16,8 +16,14 @@ fn main()
 #[allow(dead_code)]
 fn test_tokenizer(text: &'static str)
 {
-    let mut tk = token::Tokenizer::new(text.chars());
+    let tk1 = token::Tokenizer::new(text.chars());
     
+    test_tokenizer_it(tk1);
+}
+
+#[allow(dead_code)]
+fn test_tokenizer_it<I: Iterator<char>>(mut tk: token::Tokenizer<I>)
+{
     for token in tk {
         println!("{}", token);
     }

@@ -2,6 +2,7 @@
 use std;
 
 /// An iterator which supports peeking.
+#[deriving(Clone)]
 pub struct IteratorPeeker<T, U: Iterator<T>>
 {
     it: U,

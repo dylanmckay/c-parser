@@ -4,13 +4,7 @@ use std;
 
 use util::IteratorPeeker;
 
-// NOTES:
-// Perhaps we should add a 'fork()' method to tokenizer.
-// The forked tokenizer would then read tokens, and could be used for lookahead.
-// And then we could destroy the forked tokenizer and then pass the original tokenizer
-// to the appropriate parse function.
-//
-// TODO: seperate keyword and identifier?
+// TODO: seperate keyword and identifier? is it a good idea?
 
 
 /// The type of a token.
@@ -82,6 +76,7 @@ impl std::fmt::Show for Token
 }
 
 /// A tokenizer.
+#[deriving(Clone)]
 pub struct Tokenizer<I: Iterator<char>>
 {
     it: IteratorPeeker<char, I>,
@@ -261,6 +256,7 @@ impl<I: Iterator<char>> Tokenizer<I>
     }
 }
 
+#[deriving(Clone)]
 impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
 {
     /// Gets the next token.
