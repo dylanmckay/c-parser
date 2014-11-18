@@ -211,6 +211,28 @@ impl<I: Iterator<char>> Tokenizer<I>
         Ok(Token(KindWord, String::from_chars(chars.as_slice())))
     }
     
+    fn parse_numeric_literal(&mut self) -> Result<Token,String>
+    {
+        // we should be at the first digit.
+        assert!(self.it.peek().unwrap().is_digit());
+        
+        let mut result = String::new();
+        result.push(self.it.next().unwrap());
+        
+        loop {
+            match self.it.peek() {
+                // check if it is hexadecimal..
+                Some(c) if (c.is_digit()) | (c == 'x') => {
+                    self.it.eat();
+                    result.push(c);
+                },
+                Some(..) | None => { break; }
+            }
+        }
+        
+        Ok(Token(KindIntegerLiteral, result))
+    }
+    
     fn parse_possible_symbol(&mut self) -> Result<Token,String>
     {
         'symbol_loop: for sym in self.symbol_tokens.iter() {
@@ -276,7 +298,6 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
         if first_char == '\n' {
             self.it.eat();
             return Some(Ok(Token::new_line()));
-            
         } else if first_char == '\r' {
         
             match self.it.peek_n(1) {
@@ -292,6 +313,8 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
         
         if ast::expressions::identifier::is_valid_first_char(first_char) {
             Some(self.parse_identifier())
+        } else if first_char.is_digit() {
+            Some(self.parse_numeric_literal())
         } else {
             Some(self.parse_possible_symbol())
         }

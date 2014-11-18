@@ -36,6 +36,8 @@ pub enum Expr
 {
     ExprIdentifier(expressions::Identifier),
     
+    ExprIntegerLiteral(expressions::IntegerLiteral),
+    
     // temporary. I put this here because we pattern match against an Expr,
     // and I wanted to ignore all other cases. This is an error if there are no other
     // cases, so please delete this once there is more than one Expr variant.

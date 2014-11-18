@@ -7,7 +7,7 @@ pub mod util;
 
 fn main()
 {
-    let text = "/* asdf */ ";
+    let text = "#define asdf 2321\n";
     
     //test_tokenizer(text);
     test_parser(text);

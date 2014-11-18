@@ -223,11 +223,24 @@ impl Parser
     /// Parses an expression.
     fn parse_expression<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
     {
-        match it.next()
+        match try!(expect::something(it.peek()))
         {
-            Some(Ok(Token(token::KindWord,word))) => Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr()),
-            Some(Err(err)) => { return Err(err); },
-            Some(..) | None => unimplemented!()
+            Token(token::KindWord,word) => {
+                it.eat();
+                Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr())
+            },
+            Token(token::KindIntegerLiteral, _) => self.parse_integer_literal(it),
+            _ => Err("unexpected token".to_string())
+        }
+    }
+    
+    fn parse_integer_literal<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
+    {
+        match expect::assert_kind(it.next(), token::KindIntegerLiteral) {
+            Token(token::KindIntegerLiteral, val) => {
+                Ok(ast::expressions::IntegerLiteral(val).to_expr())
+            },
+            _ => unreachable!(),
         }
     }
     
