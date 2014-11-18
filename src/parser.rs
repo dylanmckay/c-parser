@@ -225,18 +225,31 @@ impl Parser
     {
         match try!(expect::something(it.peek()))
         {
-            Token(token::KindWord,word) => {
-                it.eat();
-                Ok(ast::expressions::Identifier::from_name(word).unwrap().to_expr())
-            },
+            Token(token::KindWord, _) => self.parse_identifier(it),
             Token(token::KindIntegerLiteral, _) => self.parse_integer_literal(it),
             _ => Err("unexpected token".to_string())
+        }
+    }
+    
+    fn parse_identifier<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
+    {
+        match expect::assert_kind(it.next(), token::KindWord) {
+            // create a new identifier.
+            Token(token::KindWord, name) => match ast::expressions::Identifier::from_name(name) {
+                // the word is a valid identifier.
+                Some(ident) => Ok(ident.to_expr()),
+                
+                // the word is an ill formed identifier.
+                None => Err("invalid identifier".to_string()),
+            },
+            _ => unreachable!(),
         }
     }
     
     fn parse_integer_literal<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<ast::Expr, String>
     {
         match expect::assert_kind(it.next(), token::KindIntegerLiteral) {
+            // create a new integer literal.
             Token(token::KindIntegerLiteral, val) => {
                 Ok(ast::expressions::IntegerLiteral(val).to_expr())
             },
