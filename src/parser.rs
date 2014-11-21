@@ -3,7 +3,7 @@ use ast;
 
 use token;
 use token::{Tokenizer,Token};
-use ast::{Expr,ExprIdentifier,Expression};
+use ast::{Expr,ExprIdentifier,Expression,Statement};
 
 /// A parser can read C code and encode it into an AST.
 pub struct Parser
@@ -125,11 +125,7 @@ impl Parser
         let parameter_list = try!(self.parse_preprocessor_function_parameters(it));
         let expression = try!(self.parse_preprocessor_expression(it));
         
-        self.ast.nodes.push(ast::StmtDefine(ast::statements::preprocessor::DefineFunction(ast::preprocessor::Function {
-            name: name,
-            params: parameter_list,
-            expr: expression,
-        })));
+        self.ast.nodes.push(ast::statements::preprocessor::Define::function(name, parameter_list, expression).to_stmt());
         
         Ok(())
     }
@@ -168,10 +164,7 @@ impl Parser
     {
         let expression = try!(self.parse_preprocessor_expression(it));
 
-        self.ast.nodes.push(ast::StmtDefine(ast::statements::preprocessor::DefineConstant(ast::preprocessor::Constant {
-            name: name,
-            expr: expression,
-        })));
+        self.ast.nodes.push(ast::statements::preprocessor::Define::constant(name, expression).to_stmt());
         
         Ok(())
     }

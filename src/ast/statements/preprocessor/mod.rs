@@ -1,4 +1,4 @@
 
-pub use self::define::{Define,DefineFunction,DefineConstant};
+pub use self::define::Define;
 
 pub mod define;
