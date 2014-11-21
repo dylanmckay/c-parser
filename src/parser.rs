@@ -27,9 +27,6 @@ impl Parser
         loop {
             match it.peek() {
                 Some(Ok(tok)) => match tok {
-                    Token(token::KindSymbol, ref symbol) if symbol.as_slice() == "#" => {
-                        try!(self.parse_preprocessor(&mut it))
-                    },
                     Token(token::KindSymbol, ref symbol) if (symbol.as_slice() == "//") => {
                         try!(self.parse_line_comment(&mut it))
                     },
@@ -47,7 +44,7 @@ impl Parser
             }
         }
     }
-    
+    /*
     /// Parses a preprocessor statement.
     /// The tokenizer should be in a state such that the next read token is TokenSymbol("#").
     fn parse_preprocessor<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
@@ -183,7 +180,7 @@ impl Parser
                 Ok(Some(try!(self.parse_expression(it))))
             },
         }
-    }
+    }*/
     
     fn parse_block_comment<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
     {

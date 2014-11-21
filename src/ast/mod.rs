@@ -18,7 +18,6 @@ pub trait Statement : std::fmt::Show
 #[deriving(Show)]
 pub enum Stmt
 {
-    StmtDefine(statements::preprocessor::Define),
     StmtComment(statements::Comment),
     StmtBlock(statements::Block),
 }
