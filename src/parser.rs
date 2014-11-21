@@ -2,6 +2,7 @@
 use ast;
 
 use token;
+use Identifier;
 use token::{Tokenizer,Token};
 use ast::{Expr,ExprIdentifier,Expression,Statement};
 
@@ -73,7 +74,7 @@ impl Parser
             Some(Ok(Token(token::KindWord, name_str))) => {
                 it.next(); // eat name.
                 
-                let name = match ast::expressions::Identifier::from_name(name_str) {
+                let name = match Identifier::from_name(name_str) {
                     Some(ident) => ident,
                     None => { return Err("invalid identifier".to_string()); }
                 };
@@ -117,7 +118,7 @@ impl Parser
     /// #define ABC(b) b
     /// #define _SFR_IO8(addr)
     /// ```
-    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
+    fn parse_preprocessor_function<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: Identifier) -> Result<(), String>
     {
         let parameter_list = try!(self.parse_preprocessor_function_parameters(it));
         let expression = try!(self.parse_preprocessor_expression(it));
@@ -129,7 +130,7 @@ impl Parser
     
     /// Parses the parameter list of a #define function(a,b,c)
     /// The next token should be '(' at the point of calling this function.
-    fn parse_preprocessor_function_parameters<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Vec<ast::expressions::Identifier>, String>
+    fn parse_preprocessor_function_parameters<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<Vec<Identifier>, String>
     {
         // here we abuse this function because a preprocessor parameter list
         // resembles a regular argument list, but with all arguments being identifiers.
@@ -157,7 +158,7 @@ impl Parser
     /// #define foo bar
     /// #define asdf 1
     /// ```
-    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: ast::expressions::Identifier) -> Result<(), String>
+    fn parse_preprocessor_constant<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>, name: Identifier) -> Result<(), String>
     {
         let expression = try!(self.parse_preprocessor_expression(it));
 
@@ -236,7 +237,7 @@ impl Parser
     {
         match expect::assert_kind(it.next(), token::KindWord) {
             // create a new identifier.
-            Token(token::KindWord, name) => match ast::expressions::Identifier::from_name(name) {
+            Token(token::KindWord, name) => match Identifier::from_name(name) {
                 // the word is a valid identifier.
                 Some(ident) => Ok(ident.to_expr()),
                 

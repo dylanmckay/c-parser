@@ -2,6 +2,9 @@
 use ast;
 use std;
 
+use identifier;
+use Identifier;
+
 use util::IteratorPeeker;
 
 // TODO: seperate keyword and identifier? is it a good idea?
@@ -192,7 +195,7 @@ impl<I: Iterator<char>> Tokenizer<I>
                 None => break,
             };
             
-            if ast::expressions::identifier::is_valid_char(c) {
+            if identifier::is_valid_char(c) {
 
                 chars.push(c);
                 
@@ -307,7 +310,7 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
             }
         }
         
-        if ast::expressions::identifier::is_valid_first_char(first_char) {
+        if identifier::is_valid_first_char(first_char) {
             Some(self.parse_identifier())
         } else if first_char.is_digit() {
             Some(self.parse_numeric_literal())

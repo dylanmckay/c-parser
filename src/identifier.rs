@@ -20,13 +20,7 @@ impl Identifier
     }
 }
 
-impl ast::Expression for Identifier
-{
-    fn to_expr(self) -> ast::Expr
-    {
-        ast::ExprIdentifier(self)
-    }
-}
+
 
 /// Checks whether a character is a valid first character for an identifier.
 pub fn is_valid_first_char(c: char) -> bool

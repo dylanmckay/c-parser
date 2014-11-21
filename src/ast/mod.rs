@@ -1,8 +1,11 @@
 
 use std;
+use identifier::Identifier;
 
 pub mod statements;
 pub mod expressions;
+
+
 
 
 
@@ -33,7 +36,7 @@ pub trait Expression : std::fmt::Show
 #[deriving(Show)]
 pub enum Expr
 {
-    ExprIdentifier(expressions::Identifier),
+    ExprIdentifier(Identifier),
     
     ExprIntegerLiteral(expressions::IntegerLiteral),
     
@@ -41,6 +44,14 @@ pub enum Expr
     // and I wanted to ignore all other cases. This is an error if there are no other
     // cases, so please delete this once there is more than one Expr variant.
     ExprTmp,
+}
+
+impl Expression for Identifier
+{
+    fn to_expr(self) -> Expr
+    {
+        ExprIdentifier(self)
+    }
 }
 
 /// An [abstract syntax tree](http://en.wikipedia.org/wiki/Abstract_syntax_tree).
