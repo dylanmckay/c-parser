@@ -54,12 +54,16 @@ impl Parser
     {
         expect::assert_token(it.next(), &Token::hash());
         
-        match it.peek() {
-            Some(Ok(Token(token::KindWord, ref word))) if word.as_slice() == "define" => {
-                self.parse_preprocessor_define(it)
+        match try!(expect::kind(it.peek(), token::KindWord)) {
+            Token(token::KindWord, ref word) => match word.as_slice() {
+                "define" => self.parse_preprocessor_define(it),
+                "if" => self.parse_preprocessor_if(it),
+                
+                _ => { return Err("not a valid directive".to_string()); }
             },
-            Some(Err(err)) => { return Err(err); },
-            a => { Err(format!("unknown directive: '{}'", a).to_string()) },
+            _ => { // we can only have words.
+                unreachable!()
+            },
         }
     }
     
@@ -103,6 +107,13 @@ impl Parser
         }
     }
     
+    fn parse_preprocessor_if<I: Iterator<char>>(&mut self, it: &mut Tokenizer<I>) -> Result<(), String>
+    {
+        let precondition = try!(self.parse_preprocessor_expression(it));
+        
+        unimplemented!();
+    }
+    
     /// Parses a preprocessor #define function.
     /// Examples:
     /// ``` c
@@ -114,7 +125,7 @@ impl Parser
         let parameter_list = try!(self.parse_preprocessor_function_parameters(it));
         let expression = try!(self.parse_preprocessor_expression(it));
         
-        self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineFunction(ast::preprocessor::Function {
+        self.ast.nodes.push(ast::StmtDefine(ast::statements::preprocessor::DefineFunction(ast::preprocessor::Function {
             name: name,
             params: parameter_list,
             expr: expression,
@@ -157,7 +168,7 @@ impl Parser
     {
         let expression = try!(self.parse_preprocessor_expression(it));
 
-        self.ast.nodes.push(ast::StmtDefine(ast::statements::DefineConstant(ast::preprocessor::Constant {
+        self.ast.nodes.push(ast::StmtDefine(ast::statements::preprocessor::DefineConstant(ast::preprocessor::Constant {
             name: name,
             expr: expression,
         })));
