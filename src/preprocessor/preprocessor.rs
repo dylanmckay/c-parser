@@ -1,13 +1,14 @@
 
 use token;
 use token::{expect,Token,Tokenizer};
+use preprocessor::directives;
 
 use Identifier;
 
 #[deriving(Show)]
 pub enum Block
 {
-    Directive,
+    Directive(directives::Directive),
     Token(Token),
 }
 
@@ -61,7 +62,35 @@ impl<I: Iterator<char>> Preprocessor<I>
     
     fn preprocess_define_constant(&mut self, name: Identifier) -> Result<Block,String>
     {
-        unimplemented!();
+        let body = try!(self.read_define_body());
+        
+        Ok(Block::Directive(directives::Directive::Define(
+            directives::Define::constant(name, body)
+        )))
+    }
+    
+    fn read_define_body(&mut self) -> Result<Option<Vec<Token>>,String>
+    {
+        let mut result = Vec::new();
+        
+        loop {
+            match try!(expect::something(self.it.peek())) {
+                Token(token::Kind::NewLine,_) => {
+                    self.it.eat();
+                    break;
+                },
+                token => {
+                    self.it.eat();
+                    
+                    result.push(token);
+                }
+            }
+        }
+        
+        match result.len() {
+            0 => Ok(None),
+            _ => Ok(Some(result)),
+        }
     }
 }
 

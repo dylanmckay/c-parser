@@ -13,7 +13,7 @@ pub mod identifier;
 
 fn main()
 {
-    let text = "132";
+    let text = "#define asdf 321";
     
     //test_tokenizer(text);
     test_preprocessor(text);

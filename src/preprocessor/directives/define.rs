@@ -3,6 +3,7 @@ use Identifier;
 use token::Token;
 
 /// Specifies the kind of a define.
+#[deriving(Show)]
 pub enum Kind
 {
     Constant,
@@ -12,6 +13,7 @@ pub enum Kind
 }
 
 /// A preprocessor `#define~ block.
+#[deriving(Show)]
 pub struct Define
 {
     pub name: Identifier,
