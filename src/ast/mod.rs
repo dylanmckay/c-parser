@@ -21,8 +21,8 @@ pub trait Statement : std::fmt::Show
 #[deriving(Show)]
 pub enum Stmt
 {
-    StmtComment(statements::Comment),
-    StmtBlock(statements::Block),
+    Comment(statements::Comment),
+    Block(statements::Block),
 }
 
 /// An expression.
@@ -36,21 +36,21 @@ pub trait Expression : std::fmt::Show
 #[deriving(Show)]
 pub enum Expr
 {
-    ExprIdentifier(Identifier),
+    Identifier(Identifier),
     
-    ExprIntegerLiteral(expressions::IntegerLiteral),
+    IntegerLiteral(expressions::IntegerLiteral),
     
     // temporary. I put this here because we pattern match against an Expr,
     // and I wanted to ignore all other cases. This is an error if there are no other
     // cases, so please delete this once there is more than one Expr variant.
-    ExprTmp,
+    Tmp,
 }
 
 impl Expression for Identifier
 {
     fn to_expr(self) -> Expr
     {
-        ExprIdentifier(self)
+        Expr::Identifier(self)
     }
 }
 

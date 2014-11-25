@@ -16,7 +16,8 @@ fn main()
     let text = "#define asdf 2321\n #if defined(asdf) \n #endif";
     
     //test_tokenizer(text);
-    test_parser(text);
+    test_preprocessor(text);
+    //test_parser(text);
 }
 
 #[allow(dead_code)]
@@ -33,6 +34,25 @@ fn test_tokenizer_it<I: Iterator<char>>(mut tk: token::Tokenizer<I>)
     for token in tk {
         println!("{}", token);
     }
+}
+
+fn test_preprocessor(text: &'static str)
+{
+    let tokenizer = token::Tokenizer::new(text.chars());
+    
+    test_preprocessor_tk(tokenizer);
+}
+
+fn test_preprocessor_tk<I: Iterator<char>>(tk: token::Tokenizer<I>)
+{
+    let mut p = preprocessor::Preprocessor::new();
+    
+    match p.preprocess(tk) {
+        Ok(..) => println!("{}", p.blocks),
+        Err(err) => println!("error: {}", err),
+    }
+    
+    
 }
 
 #[allow(dead_code)]

@@ -17,6 +17,6 @@ impl ast::Statement for Comment
 {
     fn to_stmt(self) -> ast::Stmt
     {
-        ast::StmtComment(self)
+        ast::Stmt::Comment(self)
     }
 }

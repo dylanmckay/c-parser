@@ -12,55 +12,69 @@ use util::IteratorPeeker;
 
 /// The type of a token.
 #[deriving(Clone,PartialEq,Eq)]
-pub enum TokenKind
+pub enum Kind
 {
-    KindSymbol,
-    KindWord,
-    KindIntegerLiteral,
-    KindStringLiteral,
-    KindNewLine,
+    Symbol,
+    Word,
+    IntegerLiteral,
+    StringLiteral,
+    NewLine,
 }
 
-impl std::fmt::Show for TokenKind
+impl std::fmt::Show for Kind
 {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::FormatError>
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error>
     {
         match self {
-            &KindSymbol => "symbol",
-            &KindWord => "word",
-            &KindIntegerLiteral => "integer",
-            &KindStringLiteral => "string",
-            &KindNewLine => "new line",
+            &Kind::Symbol => "symbol",
+            &Kind::Word => "word",
+            &Kind::IntegerLiteral => "integer",
+            &Kind::StringLiteral => "string",
+            &Kind::NewLine => "new line",
         }.fmt(formatter)
     }
 }
 
 /// A token.
 #[deriving(Clone,PartialEq,Eq)]
-pub struct Token(pub TokenKind, pub String);
+pub struct Token(pub Kind, pub String);
 
 impl Token
 {
     // Special characters.
-    pub fn new_line() -> Token { Token(KindNewLine, "new-line".to_string()) }
+    pub fn new_line() -> Token { Token(Kind::NewLine, "new-line".to_string()) }
     
     // Symbols.
-    pub fn left_parenthesis() -> Token { Token(KindSymbol, "(".to_string()) }
-    pub fn right_parenthesis() -> Token { Token(KindSymbol, ")".to_string()) }
-    pub fn hash() -> Token { Token(KindSymbol, "#".to_string()) }
-    pub fn comma() -> Token { Token(KindSymbol, ",".to_string()) }
-    pub fn semicolon() -> Token { Token(KindSymbol, ";".to_string()) }
-    pub fn forward_slash() -> Token { Token(KindSymbol, "/".to_string()) }
-    pub fn forward_slash_asterix() -> Token { Token(KindSymbol, "/*".to_string()) }
-    pub fn asterix_forward_slash() -> Token { Token(KindSymbol, "*/".to_string()) }
-    pub fn forward_slash_slash() -> Token { Token(KindSymbol, "//".to_string()) }
-    pub fn asterix() -> Token { Token(KindSymbol, "*".to_string()) }
+    pub fn left_parenthesis() -> Token { Token(Kind::Symbol, "(".to_string()) }
+    pub fn right_parenthesis() -> Token { Token(Kind::Symbol, ")".to_string()) }
+    pub fn hash() -> Token { Token(Kind::Symbol, "#".to_string()) }
+    pub fn comma() -> Token { Token(Kind::Symbol, ",".to_string()) }
+    pub fn semicolon() -> Token { Token(Kind::Symbol, ";".to_string()) }
+    pub fn forward_slash() -> Token { Token(Kind::Symbol, "/".to_string()) }
+    pub fn forward_slash_asterix() -> Token { Token(Kind::Symbol, "/*".to_string()) }
+    pub fn asterix_forward_slash() -> Token { Token(Kind::Symbol, "*/".to_string()) }
+    pub fn forward_slash_slash() -> Token { Token(Kind::Symbol, "//".to_string()) }
+    pub fn asterix() -> Token { Token(Kind::Symbol, "*".to_string()) }
     
     // Keywords.
-    pub fn define() -> Token { Token(KindWord, "define".to_string()) }
+    pub fn define() -> Token { Token(Kind::Word, "define".to_string()) }
+    
+    pub fn move_value(mut self) -> String
+    {
+        match self {
+            Token(_, val) => val,
+        }
+    }
+    
+    pub fn value<'a>(&'a self) -> &'a str
+    {
+        match self {
+            &Token(_, ref val) => val.as_slice(),
+        }
+    }
     
     /// Checks if the token is of a given kind.
-    pub fn is(&self, kind: TokenKind) -> bool
+    pub fn is(&self, kind: Kind) -> bool
     {
         match self {
             &Token(k, _) => k == kind,
@@ -70,7 +84,7 @@ impl Token
 
 impl std::fmt::Show for Token
 {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::FormatError>
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(),std::fmt::Error>
     {
         match self {
             &Token(_, ref s) => s.fmt(formatter),
@@ -206,13 +220,13 @@ impl<I: Iterator<char>> Tokenizer<I>
             }
         }
 
-        Ok(Token(KindWord, String::from_chars(chars.as_slice())))
+        Ok(Token(Kind::Word, String::from_chars(chars.as_slice())))
     }
     
     fn parse_numeric_literal(&mut self) -> Result<Token,String>
     {
         // we should be at the first digit.
-        assert!(self.it.peek().unwrap().is_digit());
+        assert!(self.it.peek().unwrap().is_digit(10));
         
         let mut result = String::new();
         result.push(self.it.next().unwrap());
@@ -220,7 +234,7 @@ impl<I: Iterator<char>> Tokenizer<I>
         loop {
             match self.it.peek() {
                 // check if it is hexadecimal..
-                Some(c) if (c.is_digit()) | (c == 'x') => {
+                Some(c) if (c.is_digit(16)) | (c == 'x') => {
                     self.it.eat();
                     result.push(c);
                 },
@@ -228,7 +242,7 @@ impl<I: Iterator<char>> Tokenizer<I>
             }
         }
         
-        Ok(Token(KindIntegerLiteral, result))
+        Ok(Token(Kind::IntegerLiteral, result))
     }
     
     fn parse_possible_symbol(&mut self) -> Result<Token,String>
@@ -251,7 +265,7 @@ impl<I: Iterator<char>> Tokenizer<I>
             self.it.eat_several(sym.len());
             
             // we have found a symbol match.
-            return Ok(Token(KindSymbol, sym.to_string()));
+            return Ok(Token(Kind::Symbol, sym.to_string()));
         }
         
         // no matches.
@@ -259,7 +273,6 @@ impl<I: Iterator<char>> Tokenizer<I>
     }
 }
 
-#[deriving(Clone)]
 impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
 {
     /// Gets the next token.
@@ -312,7 +325,7 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
         
         if identifier::is_valid_first_char(first_char) {
             Some(self.parse_identifier())
-        } else if first_char.is_digit() {
+        } else if first_char.is_digit(10) {
             Some(self.parse_numeric_literal())
         } else {
             Some(self.parse_possible_symbol())
@@ -321,3 +334,156 @@ impl<I: Iterator<char>> Iterator<Result<Token,String>> for Tokenizer<I>
 }
 
 
+/// A collection of internal methods for token checking.
+#[allow(dead_code)]
+pub mod expect
+{
+    use token::{Token,Kind};
+    use util;
+    
+    /// Checks that there is a token.
+    pub fn something(opt: Option<Result<Token,String>>) -> Result<Token,String>
+    {
+        match opt {
+            Some(thing) => thing,
+            None => Err("expected a token".to_string()),
+        }
+    }
+    
+    /// Asserts that there is a token.
+    pub fn assert_something(opt: Option<Result<Token,String>>) -> Token
+    {
+        self::assert_result(self::something(opt))
+    }
+    
+    /// Checks that a token is equal to a given token.
+    pub fn token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Result<Token,String>
+    {
+        match opt {
+            Some(Ok(read_token)) => {
+                if &read_token == expected_token {
+                    return Ok(read_token);
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected {}", expected_token);
+        Err(msg)
+    }
+    
+    /// Asserts that a token is equal to a given token.
+    pub fn assert_token(opt: Option<Result<Token,String>>, expected_token: &Token) -> Token
+    {
+        self::assert_result(self::token(opt, expected_token))
+    }
+    
+    /// Checks that a token is of a given kind.
+    pub fn kind(opt: Option<Result<Token,String>>, expected_kind: Kind) -> Result<Token,String>
+    {
+        match opt {
+            Some(Ok(read_token)) => {
+                if read_token.is(expected_kind) {
+                    return Ok(read_token);
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected {}", expected_kind);
+        Err(msg)
+    }
+    
+    /// Checks that a token is of a given kind.
+    pub fn assert_kind(opt: Option<Result<Token,String>>, expected_kind: Kind) -> Token
+    {
+        self::assert_result(self::kind(opt, expected_kind))
+    }
+    
+    /// Checks that a token is an element of a set of kinds.
+    pub fn kinds<I: Iterator<Kind>>(opt: Option<Result<Token,String>>, mut expected_kinds: I) -> Result<Token,String>
+    {
+        // a list of kinds collected from the expected kind iterator.
+        // if the token is not matched, this list will contain all expected kinds.
+        let mut kind_list = Vec::new();
+        
+        match opt {
+            Some(Ok(read_token)) => {
+                for expected_kind in expected_kinds {
+                
+                    kind_list.push(expected_kind.clone());
+                    
+                    if read_token.is(expected_kind) {
+                        return Ok(read_token);
+                    }
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        }
+        
+        let msg = format!("expected one of: {}", kind_list);
+        Err(msg)
+    }
+    
+    /// Asserts that a token is an element of a set of kinds.
+    pub fn assert_kinds<I: Iterator<Kind>>(opt: Option<Result<Token,String>>, expected_kinds: I) -> Token
+    {
+        self::assert_result(self::kinds(opt, expected_kinds))
+    }
+    
+    /// Checks that the next token is one of a set of tokens.
+    pub fn one_of<'a, I: Iterator<&'a Token>>(opt: Option<Result<Token,String>>, mut expected_tokens: I) -> Result<Token,String>
+    {
+        // a list of tokens collected from the expected token iterator.
+        // if the token is not matched, this list will contain all expected tokens.
+        let mut token_list = Vec::new();
+        
+        match opt {
+            Some(Ok(read_token)) => {
+                
+                for possible_token in expected_tokens {
+                    token_list.push(possible_token.clone());
+                    
+                    if &read_token == possible_token {
+                        return Ok(read_token);
+                    }
+                }
+            },
+            Some(Err(err)) => {
+                return Err(err);
+            },
+            _ => (),
+        };
+        
+        let msg = format!("expected one of: {}", util::build_list_str(token_list.iter()));
+        Err(msg)
+    }
+    
+    /// Asserts that the next token is one of a set of tokens.
+    pub fn assert_one_of<'a, I: Iterator<&'a Token>>(opt: Option<Result<Token,String>>, expected_tokens: I) -> Token
+    {
+        match self::one_of(opt, expected_tokens) {
+            Ok(token) => token,
+            Err(err) => panic!(err),
+        }
+    }
+    
+    /// Helper method for unwrapping an expect result.
+    fn assert_result(opt: Result<Token,String>) -> Token
+    {
+        match opt {
+            Ok(token) => token,
+            Err(err) => panic!(err),
+        }
+    }
+        
+}

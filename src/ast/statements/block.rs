@@ -11,6 +11,6 @@ impl ast::Statement for Block
 {
     fn to_stmt(self) -> ast::Stmt
     {
-        ast::StmtBlock(self)
+        ast::Stmt::Block(self)
     }
 }

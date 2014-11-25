@@ -1,4 +1,3 @@
-use ast;
 
 /// An identifier.
 #[deriving(Clone,Show)]

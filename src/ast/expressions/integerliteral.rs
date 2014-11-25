@@ -8,7 +8,7 @@ impl ast::Expression for IntegerLiteral
 {
     fn to_expr(self) -> ast::Expr
     {
-        ast::ExprIntegerLiteral(self)
+        ast::Expr::IntegerLiteral(self)
     }
 }
 
