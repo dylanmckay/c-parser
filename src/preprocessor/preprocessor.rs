@@ -1,67 +1,38 @@
 
 use token;
-use token::{expect,Token};
+use token::{expect,Token,Tokenizer};
 
 use Identifier;
-use token::Tokenizer;
 
-/// A block of code.
 #[deriving(Show)]
 pub enum Block
 {
-    BlockRegular,
+    Directive,
+    Token(Token),
 }
 
-pub struct Preprocessor
+pub struct Preprocessor<I: Iterator<char>>
 {
-    pub blocks: Vec<Block>,
+    it: Tokenizer<I>,
 }
 
-impl Preprocessor
+impl<I: Iterator<char>> Preprocessor<I>
 {
-    pub fn new() -> Preprocessor
+    pub fn new(it: Tokenizer<I>) -> Preprocessor<I>
     {
         Preprocessor {
-            blocks: Vec::new(),
+            it: it,
         }
     }
     
-    pub fn preprocess<I: Iterator<char>>(&mut self, mut tokenizer: Tokenizer<I>) -> Result<(),String>
+    fn preprocess_directive(&mut self) -> Result<Block,String>
     {
-        loop {
-            match tokenizer.peek() {
-                Some(Ok(tok)) => match tok {
-                    Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "#") => {
-                        try!(self.preprocess_directive(&mut tokenizer));
-                    },
-                    Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "//") => {
-                        unimplemented!();
-                    },
-                    Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "/*") => {
-                        unimplemented!();
-                    },
-                    _ => {
-                        return Err(format!("unknown token: {}", tok));
-                    }
-                },
-                Some(Err(err)) => {
-                    return Err(err);
-                },
-                None => {
-                    return Ok(());
-                }
-            }
-        }
-    }
-    
-    fn preprocess_directive<I: Iterator<char>>(&mut self, tokenizer: &mut Tokenizer<I>) -> Result<(),String>
-    {
-        expect::assert_token(tokenizer.next(), &Token::hash());
+        expect::assert_token(self.it.next(), &Token::hash());
         
-        match try!(expect::kind(tokenizer.next(), token::Kind::Word)) {
+        match try!(expect::kind(self.it.next(), token::Kind::Word)) {
             Token(token::Kind::Word, ref word) => match word.as_slice() {
             
-                "define" => self.preprocess_define(tokenizer),
+                "define" => self.preprocess_define(),
                 d => { return Err(format!("unknown directive: {}", d)); },
             
             },
@@ -69,28 +40,60 @@ impl Preprocessor
         }
     }
     
-    fn preprocess_define<I: Iterator<char>>(&mut self, tokenizer: &mut Tokenizer<I>) -> Result<(),String>
+    fn preprocess_define(&mut self) -> Result<Block,String>
     {
-        let name_str = try!(expect::kind(tokenizer.next(), token::Kind::Word)).move_value();
+        let name_str = try!(expect::kind(self.it.next(), token::Kind::Word)).move_value();
         
         let name = match Identifier::from_name(name_str) {
             Some(name) => name,
             None => { return Err("invalid identifier".to_string()); },
         };
         
-        match try!(expect::something(tokenizer.peek())) {
+        match try!(expect::something(self.it.peek())) {
             Token(token::Kind::Symbol, ref sym) if sym.as_slice() == "(" => {
                 unimplemented!();
             },
             _ => {
-                self.preprocess_define_constant(name, tokenizer)
+                self.preprocess_define_constant(name)
             }
         }
     }
     
-    fn preprocess_define_constant<I: Iterator<char>>(&mut self, name: Identifier, tokenizer: &mut Tokenizer<I>) -> Result<(),String>
+    fn preprocess_define_constant(&mut self, name: Identifier) -> Result<Block,String>
     {
         unimplemented!();
+    }
+}
+
+impl<I: Iterator<char>> Iterator<Result<Block,String>> for Preprocessor<I>
+{
+    fn next(&mut self) -> Option<Result<Block,String>>
+    {
+        match self.it.peek() {
+            Some(Ok(tok)) => match tok {
+                Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "#") => {
+                    Some(self.preprocess_directive())
+                },
+                Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "//") => {
+                    unimplemented!();
+                },
+                Token(token::Kind::Symbol, ref symbol) if (symbol.as_slice() == "/*") => {
+                    unimplemented!();
+                },
+                // it's just a regular token - pass it on.
+                _ => {
+                    self.it.eat(); // chew on the token so we don't choke next iteration
+                    
+                    Some(Ok(Block::Token(tok)))
+                }
+            },
+            Some(Err(err)) => {
+                return Some(Err(err));
+            },
+            None => {
+                return None;
+            }
+        }
     }
 }
 

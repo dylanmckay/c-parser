@@ -13,7 +13,7 @@ pub mod identifier;
 
 fn main()
 {
-    let text = "#define asdf 2321\n #if defined(asdf) \n #endif";
+    let text = "132";
     
     //test_tokenizer(text);
     test_preprocessor(text);
@@ -45,14 +45,11 @@ fn test_preprocessor(text: &'static str)
 
 fn test_preprocessor_tk<I: Iterator<char>>(tk: token::Tokenizer<I>)
 {
-    let mut p = preprocessor::Preprocessor::new();
-    
-    match p.preprocess(tk) {
-        Ok(..) => println!("{}", p.blocks),
-        Err(err) => println!("error: {}", err),
+    let mut p = preprocessor::Preprocessor::new(tk);
+
+    for thing in p {
+        println!("{}", thing);
     }
-    
-    
 }
 
 #[allow(dead_code)]
